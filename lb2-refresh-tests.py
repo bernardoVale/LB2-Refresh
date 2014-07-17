@@ -64,5 +64,6 @@ class TestOracle(unittest.TestCase):
         mustByConnection = self.r.estabConnection(c)
         self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -97,6 +97,6 @@ class LB2Refresh:
         return conn
 
 l = LB2Refresh()
-l.buildConfig()
-l.estabConnection(l.config)
+#l.buildConfig()
+#l.estabConnection(l.config)
 #print l.config.backup_file
