@@ -95,8 +95,25 @@ class LB2Refresh:
             return False
         logging.info("Conexão estabelecida!")
         return conn
-
-l = LB2Refresh()
+    def cleanSchemas(self):
+        """
+        Irá remover todos os schemas do banco de dados
+        Com base utilizando os nomes contidos na lista de schemas
+        :return:
+        """
+        logging.debug("Método cleanSchemas")
+        con = self.estabConnection(self.config)
+        if isinstance(con,bool):
+            sys.exit(2)
+        cur = con.cursor()
+        logging.info("Iniciando limpeza...")
+        for schema in self.config.schemas:
+            logging.info("Realizando limpeza do usuario "+schema)
+            res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, [schema])
+            print res
+        logging.info("Todos os usuários foram removidos do banco!")
+#l = LB2Refresh()
 #l.buildConfig()
+#l.cleanSchemas()
 #l.estabConnection(l.config)
 #print l.config.backup_file

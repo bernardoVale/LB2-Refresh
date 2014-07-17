@@ -39,12 +39,12 @@ class TestConfigFile(unittest.TestCase):
         self.r.buildConfig()
         self.assertEqual(self.r.config.ip, '10.200.0.116')
         self.assertEqual(self.r.config.sid, 'rest')
-        self.assertEqual(self.r.config.senha, 'oracle')
-        self.assertEqual(self.r.config.user, 'system')
+        self.assertEqual(self.r.config.senha, 'refresh')
+        self.assertEqual(self.r.config.user, 'lb2_refresh')
         self.assertEqual(self.r.config.directory, 'DATAPUMP')
         self.assertEqual(self.r.config.backup_file, '/Users/bernardovale/dpfull.dmp')
         self.assertEqual(self.r.config.log_dir, '/u01/app/oracle/backup/log')
-        self.assertEqual(self.r.config.schemas, ['OE', 'SCOTT', 'SH'])
+        self.assertEqual(self.r.config.schemas, ['TESTE1', 'TESTE2', 'TESTE3'])
         self.assertEqual(self.r.config.coletar_estatisticas, 'false')
 
 class TestOracle(unittest.TestCase):
@@ -64,6 +64,28 @@ class TestOracle(unittest.TestCase):
         mustByConnection = self.r.estabConnection(c)
         self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
 
-
+    def test_lb2refresh_clean(self):
+        """
+        Testa a função LB2-Refresh-Clean
+        Se envio um usuário inválido o primeiro caracter deverá ser 1
+        Caso tudo OK 0
+        :return:
+        """
+        c = Config()
+        c.senha = 'refresh'
+        c.sid = 'rest'
+        c.user = 'lb2_refresh'
+        c.ip = "10.200.0.116"
+        c.schemas = "CARALHUDO"
+        con = self.r.estabConnection(c)
+        cursor = con.cursor()
+        cursor.execute("create user capa identified by capa")
+        cur = con.cursor()
+        res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, ['CAPA'])
+        self.assertEqual(res[0:1],"0")
+        res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, ['CAPACAPUDO'])
+        self.assertEqual(res[0:1],"1")
+        cur.close()
+        con.close()
 if __name__ == '__main__':
     unittest.main()
