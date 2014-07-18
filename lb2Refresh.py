@@ -1,4 +1,5 @@
-# coding=utf-8
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
@@ -10,6 +11,7 @@ import os.path
 import cx_Oracle
 import logging
 import datetime
+import pxssh
 
 class Config:
     """
@@ -25,6 +27,9 @@ class Config:
             self.backup_file = config['backup_file']
             self.log_dir = config['log_dir']
             self.schemas = config['schemas']
+            self.osuser = config['destino']['osuser']
+            self.ospwd = config['destino']['ospwd']
+            self.var_dir = config['destino']['var_dir']
             self.coletar_estatisticas = config['coletar_estatisticas']
         except:
             pass
@@ -106,8 +111,72 @@ class LB2Refresh:
             res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, [schema])
             print res
         logging.info("Todos os usuários foram removidos do banco!")
-#l = LB2Refresh()
-#l.buildConfig()
-#l.cleanSchemas()
-#l.estabConnection(l.config)
-#print l.config.backup_file
+    def runRemote(self,cmd):
+        """
+        Executa um comando no host Destino
+        :param cmd: comando a ser executado (list)
+        :return: Resultado do comando
+        """
+        result = ""
+        logging.debug("Método runRemote")
+        s = pxssh.pxssh()
+        logging.info("Iniciando conexão SSH")
+        if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
+            logging.error("Falha ao realizar conexão remota:")
+            logging.error("Credencias: ip:"+self.config.ip
+                          +" user:"+self.config.osuser+" senha:"+self.config.ospwd)
+            sys.exit(2)
+        else:
+            logging.info("Conexao realizada. Executando comando:"+cmd)
+            s.sendline (cmd)
+            s.prompt()         # match the prompt
+            # Gambi pra tirar o comando que eu chamei
+            result = '\n'.join(str(s.before).split('\n')[1::])
+            s.logout()
+        return result
+        # shell = lambda a,b,c,d: spur.SshShell(hostname=a, username=b, password=b).run(d)
+        # logging.info("Executando comando: "+str(cmd))
+        # try:
+        #     return shell(self.config.ip,self.config.osuser,self.config.ospwd,cmd).output
+        # except:
+        #     logging.info("Comando:"+str(cmd)+" inválido, verifique as variáveis de ambiente")
+        #     sys.exit(2)
+        #     pass
+
+    def leaveWithMessage(self,message):
+        """
+        Método padronizado para finalizar o script
+        :param message: Mensagem final
+        :return: None
+        """
+        logging.error(message)
+        logging.error("Finalizando o script...")
+        sys.exit(2)
+
+    def checkOraVariables(self):
+        """
+        Responsável por verificar se todas as variáveis necessárias
+        a importação estão OK!
+
+        Caso aconteça algum erro o script termina
+        :return: (bool) Se estiver tudo OK
+        """
+        logging.debug("Método checkOraVariables")
+        result = self.runRemote(". "+self.config.var_dir+";env")
+        if "-bash" in result:
+            self.leaveWithMessage(result)
+        if "ORACLE_HOME" not in result:
+            self.leaveWithMessage("ORACLE_HOME não foi setado. Verifique o arquivo:"
+                          +self.config.var_dir)
+        result = self.runRemote(". "+self.config.var_dir+";impdp help=y")
+        if "-bash" in result:
+            self.leaveWithMessage(result)
+        logging.info("Tudo OK. Podemos iniciar a importação!")
+        return True
+
+# l = LB2Refresh()
+# l.buildConfig()
+# l.cleanSchemas()
+# is_ok = l.checkOraVariables()
+# if is_ok:
+#     print "do_importacao"

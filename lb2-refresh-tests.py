@@ -1,4 +1,5 @@
-# coding=utf-8
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
@@ -40,7 +41,10 @@ class TestConfigFile(unittest.TestCase):
         self.assertEqual(self.r.config.ip, '10.200.0.116')
         self.assertEqual(self.r.config.sid, 'rest')
         self.assertEqual(self.r.config.senha, 'refresh')
+        self.assertEqual(self.r.config.ospwd, 'oracle')
+        self.assertEqual(self.r.config.osuser, 'oracle')
         self.assertEqual(self.r.config.user, 'lb2_refresh')
+        self.assertEqual(self.r.config.var_dir, '/home/oracle/bash_profile')
         self.assertEqual(self.r.config.directory, 'DATAPUMP')
         self.assertEqual(self.r.config.backup_file, '/Users/bernardovale/dpfull.dmp')
         self.assertEqual(self.r.config.log_dir, '/u01/app/oracle/backup/log')
@@ -54,6 +58,8 @@ class TestOracle(unittest.TestCase):
     def setUp(self):
         self.r = LB2Refresh()
         self.conn = ""
+        self.r.readConfig('/Users/bernardovale/Documents/LB2/scripts/lb2_refresh/config.json')
+        self.r.buildConfig()
 
     def test_connection(self):
         c = Config()
@@ -87,5 +93,22 @@ class TestOracle(unittest.TestCase):
         self.assertEqual(res[0:1],"1")
         cur.close()
         con.close()
+
+    def test_check_host(self):
+        """
+        Verifica a conectividade com o host
+        :return:
+        """
+        teste = self.r.runRemote("echo -n teste")
+        self.assertEqual(teste,"teste")
+
+    def test_oracleVariables(self):
+         """
+         Verifica as variáveis de ambiente.
+         :return:
+         """
+         isOk = self.r.checkOraVariables()
+         self.assertEqual(isOk,True)
+
 if __name__ == '__main__':
     unittest.main()

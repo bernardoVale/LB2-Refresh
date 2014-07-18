@@ -6,5 +6,9 @@ Python script for schema update inside the Oracle Database
 **Pre-Reqs:**
 
 cx_Oracle
+
 Oracle Instant client
+
 Python 2.7
+
+[pexpect] (http://pexpect.sourceforge.net/pxssh.html) -- Remote SSH :
