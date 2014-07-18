@@ -15,7 +15,7 @@ class Config:
     """
         Objeto de Configuração do LB2-Refresh
     """
-    def wrap(self,config):
+    def __init__(self,config=None):
         try:
             self.sid = config['destino']['sid']
             self.ip = config['destino']['ip']
@@ -27,9 +27,7 @@ class Config:
             self.schemas = config['schemas']
             self.coletar_estatisticas = config['coletar_estatisticas']
         except:
-            print "Verifique o JSON de configuração. Declarações incorretas"
-        return self
-
+            pass
 
 class LB2Refresh:
 
@@ -48,7 +46,8 @@ class LB2Refresh:
         :return:
         """
         logging.debug('Método buildConfig')
-        self.config = Config().wrap(self.config)
+        self.config = Config(self.config)
+            #.wrap(self.config)
     def readConfig(self,path):
         '''
         Realiza a leitura do JSON e adiciona a variavel config.
@@ -58,9 +57,8 @@ class LB2Refresh:
         logging.debug('Método readConfig')
         if self.fileExists(path):
             logging.info('Abrindo o json:'+str(path))
-            loader = open(path)
-            self.config = json.load(loader)
-            loader.close()
+            with open(path) as opf:
+                self.config = json.load(opf)
         else:
             logging.error('Arquivo inexistente:'+str(path))
 
@@ -72,13 +70,9 @@ class LB2Refresh:
         '''
         logging.debug('Método fileExists')
         logging.debug('Verificando se existe o arquivo:'+path)
-        if os.path.isfile(path) and os.access(path, os.R_OK):
-            logging.info('Existe!')
-            return True
-        else:
-            logging.info('Não existe!')
-            return False
-
+        #Agora tambem sei brincar de lambda
+        x = lambda y: True if os.path.isfile(y) and os.access(y, os.R_OK) else False
+        return x(path)
     def estabConnection(self,c=Config):
         """
         Tenta conectar no Oracle com as credenciais
