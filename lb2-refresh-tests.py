@@ -44,7 +44,7 @@ class TestConfigFile(unittest.TestCase):
         self.assertEqual(self.r.config.ospwd, 'oracle')
         self.assertEqual(self.r.config.osuser, 'oracle')
         self.assertEqual(self.r.config.user, 'lb2_refresh')
-        self.assertEqual(self.r.config.var_dir, '/home/oracle/bash_profile')
+        self.assertEqual(self.r.config.var_dir, '/home/oracle/.bash_profile')
         self.assertEqual(self.r.config.directory, 'DATAPUMP')
         self.assertEqual(self.r.config.backup_file, '/Users/bernardovale/dpfull.dmp')
         self.assertEqual(self.r.config.log_dir, '/u01/app/oracle/backup/log')
@@ -110,5 +110,8 @@ class TestOracle(unittest.TestCase):
          isOk = self.r.checkOraVariables()
          self.assertEqual(isOk,True)
 
+    #def test_
+
+# impdp system/oracle directory=DATAPUMP dumpfile=xyz.dmp logfile=teste.log schemas=1,2,3 exclude=statistics
 if __name__ == '__main__':
     unittest.main()

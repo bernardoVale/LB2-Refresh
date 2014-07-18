@@ -18,27 +18,37 @@ class Config:
         Objeto de Configuração do LB2-Refresh
     """
     def __init__(self,config=None):
-        try:
-            self.sid = config['destino']['sid']
-            self.ip = config['destino']['ip']
-            self.user = config['destino']['user']
-            self.senha = config['destino']['senha']
-            self.directory = config['destino']['directory']
-            self.backup_file = config['backup_file']
-            self.log_dir = config['log_dir']
-            self.schemas = config['schemas']
-            self.osuser = config['destino']['osuser']
-            self.ospwd = config['destino']['ospwd']
-            self.var_dir = config['destino']['var_dir']
-            self.coletar_estatisticas = config['coletar_estatisticas']
-        except:
-            pass
+        #Necessário pois as vezes chamo esse método sem passar um dict
+        if isinstance(config,dict):
+            # Esses parametros entram no try pois são obrigatórios.
+            try:
+                self.sid = config['destino']['sid']
+                self.ip = config['destino']['ip']
+                self.user = config['destino']['user']
+                self.senha = config['destino']['senha']
+                self.directory = config['destino']['directory']
+                self.backup_file = config['backup_file']
+                self.log_dir = config['log_dir']
+                self.schemas = config['schemas']
+                self.osuser = config['destino']['osuser']
+                self.ospwd = config['destino']['ospwd']
+                self.var_dir = config['destino']['var_dir']
+            except:
+                logging.error("Falha ao ler um dos parametros."
+                              " Verifique o JSON de configuração")
+                sys.exit(2)
+            # Variáveis opcionais
+            if dict(config).has_key('coletar_estatisticas'):
+                self.coletar_estatisticas = config['coletar_estatisticas']
 
 class LB2Refresh:
 
-    def __init__(self):
+    def __init__(self,log=None):
         # Configuração do Log
-        logging.basicConfig(filename='LB2Refresh_'+datetime.datetime.now().strftime("%Y%m%d%H%M")+'.log'
+        filename = 'LB2Refresh_'+datetime.datetime.now().strftime("%Y%m%d%H%M")+'.log'
+        if isinstance(log,str):
+            filename = log + filename
+        logging.basicConfig(filename=filename
                             ,level=logging.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
         logging.info('Iniciando LB2-Refresh')
@@ -109,8 +119,12 @@ class LB2Refresh:
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario "+schema)
             res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, [schema])
-            print res
+            #O primeiro caracter define o sucesso.
+            if res[0] == "1":
+                self.leaveWithMessage(res)
+            logging.info(res)
         logging.info("Todos os usuários foram removidos do banco!")
+
     def runRemote(self,cmd):
         """
         Executa um comando no host Destino
@@ -174,9 +188,56 @@ class LB2Refresh:
         logging.info("Tudo OK. Podemos iniciar a importação!")
         return True
 
+    def testBackup(self):
+        """
+        Verifica se o backup existe.
+        :return: bool
+        """
+        if self.fileExists(self.config.backup_file):
+            logging.info("Backup existe!")
+            return True
+        else:
+            logging.error("Backup inexistente, verifique o arquivo:"
+                          +self.config.backup_file)
+            return False
+
 # l = LB2Refresh()
 # l.buildConfig()
 # l.cleanSchemas()
 # is_ok = l.checkOraVariables()
 # if is_ok:
 #     print "do_importacao"
+
+def testMode():
+    l = LB2Refresh()
+    l.buildConfig()
+    if l.testBackup():
+        print "Backup OK!"
+        if l.estabConnection(l.config):
+            print "Conexão OK!"
+            r = l.runRemote("echo -n teste")
+            if r == "teste":
+                print "Conexão SSH OK!"
+                if l.checkOraVariables():
+                    print "Variáveis de Ambiente OK!"
+
+def run(log=None):
+    if isinstance(log,str):
+        l = LB2Refresh(log)
+    else:
+        l = LB2Refresh()
+    l.buildConfig()
+    l.cleanSchemas()
+
+#todo Melhorar o parse de comandos
+log = ""
+if "--log" in sys.argv:
+    i = sys.argv.index("--log")
+    log = sys.argv[i+1]
+if "--test" in sys.argv:
+    testMode()
+# else:
+#     if log == "":
+#         run()
+#     else:
+#         run(log)
