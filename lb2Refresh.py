@@ -40,6 +40,8 @@ class Config:
             # Variáveis opcionais
             if dict(config).has_key('coletar_estatisticas'):
                 self.coletar_estatisticas = config['coletar_estatisticas']
+            if dict(config).has_key('remap_tablespace'):
+                self.remap_tablespace = config['remap_tablespace']
 
 class LB2Refresh:
 
@@ -210,8 +212,11 @@ class LB2Refresh:
         +" directory="+self.config.directory+" dumpfile="+self.config.backup_file \
         + " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
+        # Adição de parametros opicionais
+        if hasattr(self.config, 'remap_tablespace'):
+            cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
         r = self.runRemote(cmd)
-        print r
+        print cmd
 # l = LB2Refresh()
 # l.buildConfig()
 # l.cleanSchemas()
