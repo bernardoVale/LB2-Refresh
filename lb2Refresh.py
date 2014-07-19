@@ -28,7 +28,7 @@ class Config:
                 self.senha = config['destino']['senha']
                 self.directory = config['destino']['directory']
                 self.backup_file = config['backup_file']
-                self.log_dir = config['log_dir']
+                self.logfile = config['logfile']
                 self.schemas = config['schemas']
                 self.osuser = config['destino']['osuser']
                 self.ospwd = config['destino']['ospwd']
@@ -133,7 +133,7 @@ class LB2Refresh:
         """
         result = ""
         logging.debug("Método runRemote")
-        s = pxssh.pxssh()
+        s = pxssh.pxssh(timeout=86400, maxread=999999999)
         logging.info("Iniciando conexão SSH")
         if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
             logging.error("Falha ao realizar conexão remota:")
@@ -200,7 +200,18 @@ class LB2Refresh:
             logging.error("Backup inexistente, verifique o arquivo:"
                           +self.config.backup_file)
             return False
-
+    def runImport(self):
+        """
+        Roda o impdp de acordo com as especificações do Config File
+        :rtype : object
+        :return:
+        """
+        cmd = "impdp "+self.config.user+"/"+self.config.senha \
+        +" directory="+self.config.directory+" dumpfile="+self.config.backup_file \
+        + " logfile="+self.config.logfile+" schemas=" \
+        +','.join(list(self.config.schemas))
+        r = self.runRemote(cmd)
+        print r
 # l = LB2Refresh()
 # l.buildConfig()
 # l.cleanSchemas()
@@ -211,15 +222,13 @@ class LB2Refresh:
 def testMode():
     l = LB2Refresh()
     l.buildConfig()
-    if l.testBackup():
-        print "Backup OK!"
-        if l.estabConnection(l.config):
-            print "Conexão OK!"
-            r = l.runRemote("echo -n teste")
-            if r == "teste":
-                print "Conexão SSH OK!"
-                if l.checkOraVariables():
-                    print "Variáveis de Ambiente OK!"
+    if l.estabConnection(l.config):
+        print "Conexão OK!"
+        r = l.runRemote("echo -n teste")
+        if r == "teste":
+            print "Conexão SSH OK!"
+            if l.checkOraVariables():
+                print "Variáveis de Ambiente OK!"
 
 def run(log=None):
     if isinstance(log,str):
@@ -228,6 +237,7 @@ def run(log=None):
         l = LB2Refresh()
     l.buildConfig()
     l.cleanSchemas()
+    l.runImport()
 
 #todo Melhorar o parse de comandos
 log = ""
@@ -236,8 +246,8 @@ if "--log" in sys.argv:
     log = sys.argv[i+1]
 if "--test" in sys.argv:
     testMode()
-# else:
-#     if log == "":
-#         run()
-#     else:
-#         run(log)
+else:
+     if log == "":
+         run()
+     else:
+         run(log)
