@@ -40,10 +40,10 @@ def parse_args():
 
     return parser.parse_args()
 
-if __name__ == '__main__':
-    r = parse_args()
-    print r.log_dir
-    print os.getcwd()
+
+    #run()
+    #print r.log_dir
+    #print os.getcwd()
     #parser = argparse.ArgumentParser()
     #parse_args(parser)
 
@@ -89,7 +89,7 @@ class LB2Refresh:
             format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
         logging.info('Iniciando LB2-Refresh')
         self.config = ''
-        self.readConfig(str(sys.argv[1]))
+        self.readConfig(str(sys.argv[2]))
 
     def buildConfig(self):
         """
@@ -252,13 +252,6 @@ class LB2Refresh:
         r = self.runRemote(cmd)
         print cmd
 
-# l = LB2Refresh()
-# l.buildConfig()
-# l.cleanSchemas()
-# is_ok = l.checkOraVariables()
-# if is_ok:
-#     print "do_importacao"
-
 def testMode():
     l = LB2Refresh()
     l.buildConfig()
@@ -278,6 +271,19 @@ def run(log=None):
     l.buildConfig()
     l.cleanSchemas()
     l.runImport()
+
+if __name__ == '__main__':
+    r = parse_args()
+    testMode()
+
+# l = LB2Refresh()
+# l.buildConfig()
+# l.cleanSchemas()
+# is_ok = l.checkOraVariables()
+# if is_ok:
+#     print "do_importacao"
+
+
 
 # #todo Melhorar o parse de comandos
 # log = ""
