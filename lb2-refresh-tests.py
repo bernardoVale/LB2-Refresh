@@ -46,9 +46,9 @@ class TestConfigFile(unittest.TestCase):
         self.assertEqual(self.r.config.user, 'lb2_refresh')
         self.assertEqual(self.r.config.var_dir, '/home/oracle/.bash_profile')
         self.assertEqual(self.r.config.directory, 'DATAPUMP')
-        self.assertEqual(self.r.config.backup_file, 'dpfull_tester.dmp')
-        self.assertEqual(self.r.config.logfile, 'tester.log')
-        self.assertEqual(self.r.config.schemas, ['TESTER'])
+        self.assertEqual(self.r.config.backup_file, '/Users/bernardovale/dpfull.dmp')
+        self.assertEqual(self.r.config.logfile, 'import_tasy.log')
+        self.assertEqual(self.r.config.schemas, ['TASY'])
         self.assertEqual(self.r.config.coletar_estatisticas, 'false')
 
 class TestOracle(unittest.TestCase):

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import argparse
+
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
@@ -12,6 +14,38 @@ import cx_Oracle
 import logging
 import datetime
 import pxssh
+
+
+def parse_args():
+    """
+    Método de analise dos argumentos do software.
+    Qualquer novo argumento deve ser configurado aqui
+    :return: Resultado da analise, contendo todas as variáveis resultantes
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test', action='store_true', default=False,
+                        dest='is_testing',
+                        help='Realiza uma bateria de testes antes de importar.')
+
+    parser.add_argument('--config', required=True, action='store',
+                        dest='config',
+                        help='Arquivo de configuração, obrigatório para o funcionamento do software.')
+    #Default é o local do script
+    parser.add_argument('--log', action='store',default=os.getcwd(),
+                        dest='log_dir',
+                        help='Diretório para salvar o log da operação.')
+
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0',
+    help='Exibe a versão atual do sistema.')
+
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    r = parse_args()
+    print r.log_dir
+    print os.getcwd()
+    #parser = argparse.ArgumentParser()
+    #parse_args(parser)
 
 class Config:
     """
@@ -217,6 +251,7 @@ class LB2Refresh:
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
         r = self.runRemote(cmd)
         print cmd
+
 # l = LB2Refresh()
 # l.buildConfig()
 # l.cleanSchemas()
@@ -244,15 +279,15 @@ def run(log=None):
     l.cleanSchemas()
     l.runImport()
 
-#todo Melhorar o parse de comandos
-log = ""
-if "--log" in sys.argv:
-    i = sys.argv.index("--log")
-    log = sys.argv[i+1]
-if "--test" in sys.argv:
-    testMode()
-else:
-     if log == "":
-         run()
-     else:
-         run(log)
+# #todo Melhorar o parse de comandos
+# log = ""
+# if "--log" in sys.argv:
+#     i = sys.argv.index("--log")
+#     log = sys.argv[i+1]
+# if "--test" in sys.argv:
+#     testMode()
+# else:
+#      if log == "":
+#          run()
+#      else:
+#          run(log)
