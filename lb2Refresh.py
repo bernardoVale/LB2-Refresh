@@ -282,7 +282,7 @@ if __name__ == '__main__':
 # is_ok = l.checkOraVariables()
 # if is_ok:
 #     print "do_importacao"
-
+#teste
 
 
 # #todo Melhorar o parse de comandos
