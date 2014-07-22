@@ -1,33 +1,36 @@
 --Grant necessários
-create user lb2_refresh identified by refresh;
+create user lb2_refresh identified by refresh default tablespace system;
+grant connect to lb2_refresh;
+grant dba to lb2_refresh;
 grant select on dba_users to lb2_refresh;
 grant select on v_$session to lb2_refresh;
 grant drop user to lb2_refresh;
 grant alter system to lb2_refresh;
+
 
 --Teste
 create user teste1 identified by teste1;
 create user teste2 identified by teste2;
 create user teste3 identified by teste3;
 
-create or replace function lb2_refresh_clean(p_user in varchar2) return varchar2 is
+create or replace function             lb2_refresh_clean(p_user in varchar2) return varchar2 is
 w_user varchar2(100);
- -- Controlo se todas as sessões já morreram 0 = dead 1 = alive
+ -- Controlo se todas as sessõees já morreram 0 = dead 1 = alive
 is_dead integer := 1;
 --Quantidade de usuários logados
 w_user_count integer;
 begin
+
   --Primeiro teste: O usuário existe?
   select username into w_user from DBA_USERS where username=p_user;
   --Segundo: Preciso garantir que nenhuma conexão exista no usuário
-  while (is_dead = 1) loop
-    DBMS_OUTPUT.PUT_LINE('LB2-Refresh:Clean: Removendo conexões do usuário '
+  DBMS_OUTPUT.PUT_LINE('LB2-Refresh:Clean: Removendo conexões do usuário '
       ||p_user);
-    FOR r IN (select sid,serial# from v$session where username = p_user)
-      LOOP
+  FOR r IN (select sid,serial# from sys.v$session where username = p_user) LOOP
         EXECUTE IMMEDIATE 'alter system kill session ''' || r.sid
           || ',' || r.serial# || '''';
-    END LOOP;
+  END LOOP;
+  while (is_dead = 1) loop
     select count(*) INTO w_user_count from v$session where username = p_user;
     --Não existe nenhuma conexão, posso prosseguir.
     IF w_user_count = 0 then
@@ -36,6 +39,10 @@ begin
       is_dead := 0;
     end if;
   end loop;
+  --Agora posso remover o usuário
+  DBMS_OUTPUT.PUT_LINE('LB2-Refresh:Clean: Removendo o usuário '
+      ||p_user||'...');
+  execute immediate 'drop user '||p_user||' cascade';
   RETURN '0:LB2-Refresh:Clean finalizado com sucesso para o usuário '||p_user;
 
   EXCEPTION
@@ -43,4 +50,8 @@ begin
       rollback;
       return '1:LB2-Refresh:Clean: Usuário '||p_user||' inexistente.'
       ||'Parando o procedimento!';
+    WHEN OTHERS THEN
+      rollback;
+      return '1:LB2-Refresh:Clean: Erro ao remover o usuário '||p_user
+      || '.Parando o procedimento!';
 end;

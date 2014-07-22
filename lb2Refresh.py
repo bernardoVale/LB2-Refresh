@@ -40,13 +40,6 @@ def parse_args():
 
     return parser.parse_args()
 
-
-    #run()
-    #print r.log_dir
-    #print os.getcwd()
-    #parser = argparse.ArgumentParser()
-    #parse_args(parser)
-
 class Config:
     """
         Objeto de Configuração do LB2-Refresh
@@ -79,17 +72,8 @@ class Config:
 
 class LB2Refresh:
 
-    def __init__(self,log=None):
-        # Configuração do Log
-        filename = 'LB2Refresh_'+datetime.datetime.now().strftime("%Y%m%d%H%M")+'.log'
-        if isinstance(log,str):
-            filename = log + filename
-        logging.basicConfig(filename=filename
-                            ,level=logging.DEBUG,
-            format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
-        logging.info('Iniciando LB2-Refresh')
+    def __init__(self):
         self.config = ''
-        self.readConfig(str(sys.argv[2]))
 
     def buildConfig(self):
         """
@@ -243,17 +227,24 @@ class LB2Refresh:
         :return:
         """
         cmd = "impdp "+self.config.user+"/"+self.config.senha \
-        +" directory="+self.config.directory+" dumpfile="+self.config.backup_file \
+        +"@" +self.config.sid +" directory="+self.config.directory+" dumpfile="+self.config.backup_file \
         + " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
         # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
-        r = self.runRemote(cmd)
+        #r = self.runRemote(cmd)
         print cmd
 
-def testMode():
+
+def testMode(config):
+    """
+    Método de teste, executar antes do run()
+    :param config: Arquivo JSON de Configuração
+    :return: None
+    """
     l = LB2Refresh()
+    l.readConfig(config)
     l.buildConfig()
     if l.estabConnection(l.config):
         print "Conexão OK!"
@@ -262,38 +253,38 @@ def testMode():
             print "Conexão SSH OK!"
             if l.checkOraVariables():
                 print "Variáveis de Ambiente OK!"
-
-def run(log=None):
-    if isinstance(log,str):
-        l = LB2Refresh(log)
+            else:
+                print "Erro exportando as variáveis!"
+        else:
+            print "Erro na conexão SSH"
     else:
-        l = LB2Refresh()
+        print "Erro na conexão!"
+
+def run(config):
+    """
+    Método principal de execução
+    :param config: Arquivo JSON de Configuração
+    :return: None
+    """
+    l = LB2Refresh()
+    l.readConfig(config)
     l.buildConfig()
     l.cleanSchemas()
     l.runImport()
 
 if __name__ == '__main__':
     r = parse_args()
-    testMode()
-
-# l = LB2Refresh()
-# l.buildConfig()
-# l.cleanSchemas()
-# is_ok = l.checkOraVariables()
-# if is_ok:
-#     print "do_importacao"
-#teste
-
-
-# #todo Melhorar o parse de comandos
-# log = ""
-# if "--log" in sys.argv:
-#     i = sys.argv.index("--log")
-#     log = sys.argv[i+1]
-# if "--test" in sys.argv:
-#     testMode()
-# else:
-#      if log == "":
-#          run()
-#      else:
-#          run(log)
+    # Configuração do Log
+    #todo Suporte ao windows! Tirar a /
+    filename = r.log_dir +'/'+ 'LB2Refresh_'+datetime.datetime.now().strftime("%Y%m%d%H%M")+'.log'
+    logging.basicConfig(filename=filename
+                            ,level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
+    logging.info('Iniciando LB2-Refresh')
+    # Parametro de --test acionado. Apenas testar
+    if r.is_testing:
+        logging.info("Executando em modo --TEST")
+        testMode(r.config)
+    else:
+        logging.info("Executando no modo normal!")
+        run(r.config)
