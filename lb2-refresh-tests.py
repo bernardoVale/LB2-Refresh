@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import unittest
+
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
@@ -65,7 +67,7 @@ class TestOracle(unittest.TestCase):
         c = Config()
         c.senha = 'oracle'
         c.sid = 'rest'
-        c.user = 'system'
+        c.user = 'sys'
         c.ip = "10.200.0.116"
         mustByConnection = self.r.estabConnection(c)
         self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
@@ -78,9 +80,9 @@ class TestOracle(unittest.TestCase):
         :return:
         """
         c = Config()
-        c.senha = 'refresh'
+        c.senha = 'oracle'
         c.sid = 'rest'
-        c.user = 'lb2_refresh'
+        c.user = 'sys'
         c.ip = "10.200.0.116"
         c.schemas = "CARALHUDO"
         con = self.r.estabConnection(c)

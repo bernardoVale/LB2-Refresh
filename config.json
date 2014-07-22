@@ -4,14 +4,14 @@
 		"ip": "10.200.0.116",
 		"osuser" : "oracle",
 		"ospwd" : "oracle",
-		"senha": "refresh",
-		"user": "lb2_refresh",
+		"senha": "oracle",
+		"user": "sys",
 		"directory": "DATAPUMP",
 		"var_dir" : "/home/oracle/.bash_profile"
 	},
 	"backup_file": "/Users/bernardovale/dpfull.dmp",
 	"logfile": "import_tasy.log",
-	"schemas": ["TASY"],
+	"schemas": ["CARALHUDO"],
 	"coletar_estatisticas" : "false",
 	"remap_tablespace" : "TASY_DATA:RADICAL"
 }

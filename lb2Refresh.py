@@ -5,7 +5,6 @@ import argparse
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
-import unittest
 import json
 import sys
 import os
@@ -26,7 +25,10 @@ def parse_args():
     parser.add_argument('--test', action='store_true', default=False,
                         dest='is_testing',
                         help='Realiza uma bateria de testes antes de importar.')
-
+    parser.add_argument('--build', action='store_true', default=False,
+                        dest='is_building',
+                        help='Realiza todas as operações necessárias para o funcionamento\
+                         do software na base destino. (EXECUTAR EM BASES QUE NUNCA UTILIZARAM O SOFTWARE)')
     parser.add_argument('--config', required=True, action='store',
                         dest='config',
                         help='Arquivo de configuração, obrigatório para o funcionamento do software.')
@@ -117,13 +119,15 @@ class LB2Refresh:
         logging.debug('Método estabConnection')
         try:
             logging.info('Tentando conectar com o banco...')
-            conn = cx_Oracle.connect(c.user + '/' + c.senha + '@' + c.ip + '/' +c.sid)
+            #So conecto com sysdba
+            conn = cx_Oracle.connect(c.user + '/' + c.senha + '@' + c.ip + '/' +c.sid,mode = cx_Oracle.SYSDBA)
         except:
             logging.error('Não foi possível estabelecer a conexão')
             logging.error(sys.exc_info()[0])
             return False
         logging.info("Conexão estabelecida!")
         return conn
+
     def cleanSchemas(self):
         """
         Irá remover todos os schemas do banco de dados
@@ -138,7 +142,17 @@ class LB2Refresh:
         logging.info("Iniciando limpeza...")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario "+schema)
+            #Necessário para pegar os prints do dbms_output
+            cur.callproc("dbms_output.enable")
             res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, [schema])
+            #cur.callproc('where.my_package.ger_result', ['something',])
+            statusVar = cur.var(cx_Oracle.NUMBER)
+            lineVar = cur.var(cx_Oracle.STRING)
+            while True:
+                cur.callproc("dbms_output.get_line", (lineVar, statusVar))
+                if statusVar.getvalue() != 0:
+                    break
+                logging.info(lineVar.getvalue())
             #O primeiro caracter define o sucesso.
             if res[0] == "1":
                 self.leaveWithMessage(res)
@@ -153,7 +167,8 @@ class LB2Refresh:
         """
         result = ""
         logging.debug("Método runRemote")
-        s = pxssh.pxssh(timeout=86400, maxread=999999999)
+        # 48 horas
+        s = pxssh.pxssh(timeout=172800, maxread=999999999)
         logging.info("Iniciando conexão SSH")
         if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
             logging.error("Falha ao realizar conexão remota:")
@@ -168,14 +183,6 @@ class LB2Refresh:
             result = '\n'.join(str(s.before).split('\n')[1::])
             s.logout()
         return result
-        # shell = lambda a,b,c,d: spur.SshShell(hostname=a, username=b, password=b).run(d)
-        # logging.info("Executando comando: "+str(cmd))
-        # try:
-        #     return shell(self.config.ip,self.config.osuser,self.config.ospwd,cmd).output
-        # except:
-        #     logging.info("Comando:"+str(cmd)+" inválido, verifique as variáveis de ambiente")
-        #     sys.exit(2)
-        #     pass
 
     def leaveWithMessage(self,message):
         """
@@ -220,6 +227,21 @@ class LB2Refresh:
             logging.error("Backup inexistente, verifique o arquivo:"
                           +self.config.backup_file)
             return False
+    def buildSchema(self):
+        """
+        Constroí as funções necessárias para a aplicação
+        :return:
+        """
+        logging.debug("Método buildSchema")
+        logging.info("Abrindo arquivo lb2_refresh_clean.sql")
+        with open('lb2_refresh_clean.sql') as f:
+            sql = f.read()
+        con = self.estabConnection(self.config)
+        if isinstance(con,bool):
+            sys.exit(2)
+        cur = con.cursor()
+        cur.execute(sql)
+
     def runImport(self):
         """
         Roda o impdp de acordo com as especificações do Config File
@@ -233,8 +255,9 @@ class LB2Refresh:
         # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
-        #r = self.runRemote(cmd)
-        print cmd
+        r = self.runRemote(cmd)
+        logging.info("Resultado do Import")
+        logging.info(r)
 
 
 def testMode(config):
@@ -272,6 +295,20 @@ def run(config):
     l.cleanSchemas()
     l.runImport()
 
+
+def buildStuff(config):
+    """
+    Realiza todas operações necessárias para o funcionamento do sistema.
+    :param config: Arquivo JSON de Configuração
+    :return: None
+    """
+    l = LB2Refresh()
+    l.readConfig(config)
+    l.buildConfig()
+    l.buildSchema()
+    pass
+
+# Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':
     r = parse_args()
     # Configuração do Log
@@ -282,9 +319,13 @@ if __name__ == '__main__':
     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
+
     if r.is_testing:
         logging.info("Executando em modo --TEST")
         testMode(r.config)
+    elif r.is_building:
+        logging.info("Executando em modo --BUILD")
+        buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
         run(r.config)
