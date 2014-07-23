@@ -25,10 +25,12 @@ def parse_args():
     parser.add_argument('--test', action='store_true', default=False,
                         dest='is_testing',
                         help='Realiza uma bateria de testes antes de importar.')
+
     parser.add_argument('--build', action='store_true', default=False,
                         dest='is_building',
                         help='Realiza todas as operações necessárias para o funcionamento\
                          do software na base destino. (EXECUTAR EM BASES QUE NUNCA UTILIZARAM O SOFTWARE)')
+
     parser.add_argument('--config', required=True, action='store',
                         dest='config',
                         help='Arquivo de configuração, obrigatório para o funcionamento do software.')
@@ -71,6 +73,8 @@ class Config:
                 self.coletar_estatisticas = config['coletar_estatisticas']
             if dict(config).has_key('remap_tablespace'):
                 self.remap_tablespace = config['remap_tablespace']
+            if dict(config).has_key('remap_user'):
+                self.remap_user = config['remap_user']
 
 class LB2Refresh:
 
@@ -252,14 +256,11 @@ class LB2Refresh:
         "directory="+self.config.directory+" dumpfile="+self.config.backup_file+"" \
         " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
-
-        # cmd = "impdp "+self.config.user+"/"+self.config.senha \
-        # +"@" +self.config.sid +" directory="+self.config.directory+" dumpfile="+self.config.backup_file \
-        # + " logfile="+self.config.logfile+" schemas=" \
-        # +','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
+        if hasattr(self.config, 'remap_user'):
+            cmd = cmd + " remap_user="+self.config.remap_user
         r = self.runRemote(cmd)
         #print cmd
         logging.info("Resultado do Import")

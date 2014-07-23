@@ -12,5 +12,7 @@
 	"backup_file": "dpfull_tester.dmp",
 	"logfile": "import_tester.log",
 	"schemas": ["TESTER"],
-	"coletar_estatisticas" : "false"
+	"coletar_estatisticas" : "false",
+    "remap_user" : "TESTER:TESTIN",
+    "remap_tablespace" : "X1:X2"
 }
