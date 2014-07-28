@@ -127,7 +127,7 @@ class LB2Refresh:
             conn = cx_Oracle.connect(c.user + '/' + c.senha + '@' + c.ip + '/' +c.sid,mode = cx_Oracle.SYSDBA)
         except:
             logging.error('Não foi possível estabelecer a conexão')
-            logging.error(sys.exc_info()[0])
+            logging.error(sys.exc_info()[1])
             return False
         logging.info("Conexão estabelecida!")
         return conn
@@ -172,6 +172,7 @@ class LB2Refresh:
         result = ""
         logging.debug("Método runRemote")
         # 48 horas
+        #todo retornar resultados periódicos ao invés de um unico ao final.
         s = pxssh.pxssh(timeout=172800, maxread=999999999)
         logging.info("Iniciando conexão SSH")
         if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
@@ -231,6 +232,24 @@ class LB2Refresh:
             logging.error("Backup inexistente, verifique o arquivo:"
                           +self.config.backup_file)
             return False
+
+    def checkProcs(self):
+        """
+        Verifica se existe a procedure no banco.
+        :return:
+        """
+        sql = 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\''
+        con = self.estabConnection(self.config)
+        cur = con.cursor()
+        cur.execute(sql)
+        result = cur.fetchall()
+        if [result[0][0]] == ['VALID']:
+            logging.info("Procedure LB2_REFRESH_CLEAN criada com sucesso!")
+            return True
+        logging.error("Procedure LB2_REFRESH_CLEAN inexistente no banco. Execute o modo --build novamente")
+        logging.error(result)
+        return False
+
     def buildSchema(self):
         """
         Constroí as funções necessárias para a aplicação
@@ -245,6 +264,9 @@ class LB2Refresh:
             sys.exit(2)
         cur = con.cursor()
         cur.execute(sql)
+        if self.checkProcs():
+            print "Build realizado com sucesso!"
+        self.recompile_objects()
 
     def runImport(self):
         """
@@ -262,10 +284,15 @@ class LB2Refresh:
         if hasattr(self.config, 'remap_user'):
             cmd = cmd + " remap_user="+self.config.remap_user
         r = self.runRemote(cmd)
-        #print cmd
         logging.info("Resultado do Import")
         logging.info(r)
 
+    def recompile_objects(self):
+        logging.debug("Método recompile_objects")
+        cmd = 'echo exit | sqlplus '+self.config.user+'/'+self.config.senha+' as sysdba @$ORACLE_HOME/rdbms/admin/utlrp.sql'
+        logging.info("Realizando a recompilação dos objetos...")
+        result = self.runRemote(cmd)
+        logging.info(result)
 
 def testMode(config):
     """
@@ -299,9 +326,9 @@ def run(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    #l.cleanSchemas()
+    l.cleanSchemas()
     l.runImport()
-
+    l.recompile_objects()
 
 def buildStuff(config):
     """

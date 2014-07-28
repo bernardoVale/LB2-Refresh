@@ -1,7 +1,7 @@
 {
 	"destino": {
-		"sid": "rest",
-		"ip": "10.200.0.116",
+		"sid": "oradb",
+		"ip": "10.200.0.204",
 		"osuser" : "oracle",
 		"ospwd" : "oracle",
 		"senha": "oracle",
@@ -11,8 +11,5 @@
 	},
 	"backup_file": "dpfull_tester.dmp",
 	"logfile": "import_tester.log",
-	"schemas": ["TESTER"],
-	"coletar_estatisticas" : "false",
-    "remap_user" : "TESTER:TESTIN",
-    "remap_tablespace" : "X1:X2"
+	"schemas": ["TESTER"]
 }

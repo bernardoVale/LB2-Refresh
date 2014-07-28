@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from pprint import pprint
 import unittest
 
 __author__ = 'Bernardo Vale'
@@ -66,9 +67,9 @@ class TestOracle(unittest.TestCase):
     def test_connection(self):
         c = Config()
         c.senha = 'oracle'
-        c.sid = 'rest'
+        c.sid = 'oradb'
         c.user = 'sys'
-        c.ip = "10.200.0.116"
+        c.ip = "10.200.0.204"
         mustByConnection = self.r.estabConnection(c)
         self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
 
@@ -81,9 +82,9 @@ class TestOracle(unittest.TestCase):
         """
         c = Config()
         c.senha = 'oracle'
-        c.sid = 'rest'
+        c.sid = 'oradb'
         c.user = 'sys'
-        c.ip = "10.200.0.116"
+        c.ip = "10.200.0.204"
         c.schemas = "CARALHUDO"
         con = self.r.estabConnection(c)
         cursor = con.cursor()
@@ -112,8 +113,26 @@ class TestOracle(unittest.TestCase):
          isOk = self.r.checkOraVariables()
          self.assertEqual(isOk,True)
 
-    #def test_
+    def test_hasRefresh_clean(self):
+        """
+        Verifica se a procedure lb2_refresh_clean.sql existe no banco!
+        :return:
+        """
+        c = Config()
+        c.senha = 'oracle'
+        c.sid = 'oradb'
+        c.user = 'sys'
+        c.ip = "10.200.0.204"
+        sql = 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\''
+        print sql
+        con = self.r.estabConnection(c)
+        cur = con.cursor()
+        cur.execute(sql)
+        result = cur.fetchall()
+        self.assertNotEqual(result,[])
+        self.assertEqual([result[0][0]],['VALID'])
+        cur.close()
+        con.close()
 
-# impdp system/oracle directory=DATAPUMP dumpfile=xyz.dmp logfile=teste.log schemas=1,2,3 exclude=statistics
 if __name__ == '__main__':
     unittest.main()
