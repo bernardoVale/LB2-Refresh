@@ -73,8 +73,8 @@ class Config:
                 self.coletar_estatisticas = config['coletar_estatisticas']
             if dict(config).has_key('remap_tablespace'):
                 self.remap_tablespace = config['remap_tablespace']
-            if dict(config).has_key('remap_user'):
-                self.remap_user = config['remap_user']
+            if dict(config).has_key('remap_schema'):
+                self.remap_schema = config['remap_schema']
 
 class LB2Refresh:
 
@@ -266,7 +266,6 @@ class LB2Refresh:
         cur.execute(sql)
         if self.checkProcs():
             print "Build realizado com sucesso!"
-        self.recompile_objects()
 
     def runImport(self):
         """
@@ -281,8 +280,8 @@ class LB2Refresh:
         # # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
-        if hasattr(self.config, 'remap_user'):
-            cmd = cmd + " remap_user="+self.config.remap_user
+        if hasattr(self.config, 'remap_schema'):
+            cmd = cmd + " remap_schema="+self.config.remap_schema
         r = self.runRemote(cmd)
         logging.info("Resultado do Import")
         logging.info(r)
