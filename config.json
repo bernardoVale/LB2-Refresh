@@ -16,5 +16,8 @@
     },
 	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_tester.dmp",
 	"logfile": "import_tester.log",
-	"schemas": ["TESTER"]
+	"schemas": ["TESTER"],
+    "remap_tablespace" : "user:da",
+    "remap_schema" : "dadsa",
+    "coletar_estatisticas" : "true"
 }

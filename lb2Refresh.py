@@ -57,8 +57,6 @@ def parse_args():
     #todo pesquisar suporte do argparse para parametros que não podem ser utilizados juntos
     #pe de macaco
     i = 0
-    if p.send_backup:
-         i += 1
     if p.is_building:
          i += 1
     if p.is_testing:
@@ -88,17 +86,22 @@ class Config:
                 self.osuser = config['destino']['osuser']
                 self.ospwd = config['destino']['ospwd']
                 self.var_dir = config['destino']['var_dir']
+                if dict(config).has_key('remetente'):
+                    self.rem_ip = config['remetente']['ip']
+                    self.rem_osuser = config['remetente']['osuser']
+                    self.rem_ospwd = config['remetente']['ospwd']
+                # Variáveis opcionais
+                if dict(config).has_key('coletar_estatisticas'):
+                    self.coletar_estatisticas = config['coletar_estatisticas']
+                if dict(config).has_key('remap_tablespace'):
+                    self.remap_tablespace = config['remap_tablespace']
+                if dict(config).has_key('remap_schema'):
+                    self.remap_schema = config['remap_schema']
             except:
                 logging.error("Falha ao ler um dos parametros."
                               " Verifique o JSON de configuração")
                 sys.exit(2)
-            # Variáveis opcionais
-            if dict(config).has_key('coletar_estatisticas'):
-                self.coletar_estatisticas = config['coletar_estatisticas']
-            if dict(config).has_key('remap_tablespace'):
-                self.remap_tablespace = config['remap_tablespace']
-            if dict(config).has_key('remap_schema'):
-                self.remap_schema = config['remap_schema']
+
 
 class LB2Refresh:
 
@@ -112,7 +115,6 @@ class LB2Refresh:
         """
         logging.debug('Método buildConfig')
         self.config = Config(self.config)
-            #.wrap(self.config)
     def readConfig(self,path):
         '''
         Realiza a leitura do JSON e adiciona a variavel config.
@@ -348,11 +350,12 @@ def testMode(config):
     else:
         print "Erro na conexão!"
 
-def run(config,dont_clean):
+def run(config,dont_clean,send_backup):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
     :param dont_clean: Especifica se devo chamar o método cleanSchemas
+    :param send_backup: Especifica se é necessário enviar o backup ao destino.
     :return: None
     """
     l = LB2Refresh()
@@ -396,4 +399,4 @@ if __name__ == '__main__':
         buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config,r.dont_clean)
+        run(r.config,r.dont_clean,r.send_backup)
