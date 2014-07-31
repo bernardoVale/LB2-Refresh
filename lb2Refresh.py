@@ -21,15 +21,15 @@ def parse_args():
     Qualquer novo argumento deve ser configurado aqui
     :return: Resultado da analise, contendo todas as variáveis resultantes
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--test', action='store_true', default=False,
                         dest='is_testing',
                         help='Realiza uma bateria de testes antes de importar.')
 
     parser.add_argument('--build', action='store_true', default=False,
                         dest='is_building',
-                        help='Realiza todas as operações necessárias para o funcionamento\
-                         do software na base destino. (EXECUTAR EM BASES QUE NUNCA UTILIZARAM O SOFTWARE)')
+                        help='Realiza todas as operações necessárias para o funcionamento '\
+                         'do software na base destino. \n (EXECUTAR EM BASES QUE NUNCA UTILIZARAM O SOFTWARE)')
 
     parser.add_argument('--config', required=True, action='store',
                         dest='config',
@@ -43,10 +43,30 @@ def parse_args():
                         dest='dont_clean',
                         help='Realiza a importação sem remover os schemas do banco destino.')
 
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0',
-    help='Exibe a versão atual do sistema.')
+    parser.add_argument('--sendbackup', action='store_true', default=False,
+                        dest='send_backup',
+                        help='Envia o .dmp para o servidor destino antes da importação. \n'
+                             'OBS: No parametro "backup_file" do arquivo de configuração'
+                             ' tenha certeza que \n você colocou o caminho completo'
+                             ' do arquivo.\n'
+                             'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.')
 
-    return parser.parse_args()
+    parser.add_argument('--version', action='version', version='%(prog)s v1.0 BETA',
+    help='Exibe a versão atual do sistema.')
+    p = parser.parse_args()
+    #todo pesquisar suporte do argparse para parametros que não podem ser utilizados juntos
+    #pe de macaco
+    i = 0
+    if p.send_backup:
+         i += 1
+    if p.is_building:
+         i += 1
+    if p.is_testing:
+         i += 1
+    if i > 1:
+        print "Os parametros --build ou --test não podem ser utilizados juntos"
+        sys.exit(2)
+    return p
 
 class Config:
     """
@@ -278,7 +298,7 @@ class LB2Refresh:
         :return:
         """
         cmd = "impdp \\""\""+self.config.user+"/"+self.config.senha+"@"+self.config.sid+" AS SYSDBA \\\" " \
-        "directory="+self.config.directory+" dumpfile="+self.config.backup_file+"" \
+        "directory="+self.config.directory+" dumpfile="+self.cappedFilePath(self.config.backup_file)+"" \
         " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
@@ -296,6 +316,14 @@ class LB2Refresh:
         logging.info("Realizando a recompilação dos objetos...")
         result = self.runRemote(cmd)
         logging.info(result)
+
+    def cappedFilePath(self, file):
+         """
+            Método para extrair o nome do arquivo tendo o caminho completo como parametro
+            :param file Nome completo do arquivo
+            :return: file
+         """
+         return os.path.basename(file)
 
 def testMode(config):
     """

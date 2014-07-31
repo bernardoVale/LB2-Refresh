@@ -36,6 +36,17 @@ class TestConfigFile(unittest.TestCase):
         self.assertEqual(self.r.config['backup_file'], '/Users/bernardovale/dpfull.dmp')
         self.assertEqual(self.r.fileExists(self.r.config['backup_file']), True)
 
+    def test_truncate_file_dir(self):
+        """
+        Testa o mecanismo de remoção do path do backup.
+        exemplo: /home/oracle/teste.log deve tornar teste.log com esse método
+        :return:
+        """
+        file = self.r.cappedFilePath('/u01/app/oracle/backup/datapump/teste.dmp')
+        file2 = self.r.cappedFilePath('teste.dmp')
+        self.assertEqual(file,'teste.dmp')
+        self.assertEqual(file2,'teste.dmp')
+
     def test_config_properties(self):
         '''Testa todas as propriedades do JSON'''
 
