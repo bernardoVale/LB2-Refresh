@@ -39,6 +39,10 @@ def parse_args():
                         dest='log_dir',
                         help='Diretório para salvar o log da operação.')
 
+    parser.add_argument('--noclean', action='store_true', default=False,
+                        dest='dont_clean',
+                        help='Realiza a importação sem remover os schemas do banco destino.')
+
     parser.add_argument('--version', action='version', version='%(prog)s 1.0',
     help='Exibe a versão atual do sistema.')
 
@@ -316,16 +320,19 @@ def testMode(config):
     else:
         print "Erro na conexão!"
 
-def run(config):
+def run(config,dont_clean):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
+    :param dont_clean: Especifica se devo chamar o método cleanSchemas
     :return: None
     """
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    l.cleanSchemas()
+    if not dont_clean:
+        #Então limpe
+        l.cleanSchemas()
     l.runImport()
     l.recompile_objects()
 
@@ -361,4 +368,4 @@ if __name__ == '__main__':
         buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config)
+        run(r.config,r.dont_clean)
