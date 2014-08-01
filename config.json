@@ -10,14 +10,13 @@
 		"var_dir" : "/home/oracle/.bash_profile"
 	},
     "remetente" : {
-        "ip" : "10.200.0.116",
+        "ip" : "10.200.0.246",
         "osuser" : "oracle",
-        "ospwd" : "oracle"
+        "ospwd" : "oracle",
+        "backup_file" : "/backup/datapump/dpfull_20140801.dmp"
     },
-	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_tester.dmp",
-	"logfile": "import_tester.log",
-	"schemas": ["TESTER"],
-    "remap_tablespace" : "user:da",
-    "remap_schema" : "dadsa",
-    "coletar_estatisticas" : "true"
+	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_20140801.dmp",
+	"logfile": "import_sales.log",
+	"schemas": ["SALES"],
+    "remap_tablespace" : "SALES_DATA:TSD_SISTEMA"
 }

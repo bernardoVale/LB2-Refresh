@@ -1,0 +1,1 @@
+scp oracle@10.200.0.246:/backup/datapump/dpfull_20140801.dmp /u01/app/oracle/backup/datapump/dpfull_20140801.dmp

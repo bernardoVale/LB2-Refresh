@@ -49,7 +49,8 @@ def parse_args():
                              'OBS: No parametro "backup_file" do arquivo de configuração'
                              ' tenha certeza que \n você colocou o caminho completo'
                              ' do arquivo.\n'
-                             'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.')
+                             'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.\n'
+                             'NECESSÁRIO FAZER A TROCA DE CHAVES DO SSH')
 
     parser.add_argument('--version', action='version', version='%(prog)s v1.0 BETA',
     help='Exibe a versão atual do sistema.')
@@ -90,6 +91,7 @@ class Config:
                     self.rem_ip = config['remetente']['ip']
                     self.rem_osuser = config['remetente']['osuser']
                     self.rem_ospwd = config['remetente']['ospwd']
+                    self.rem_backup_file = config['remetente']['backup_file']
                 # Variáveis opcionais
                 if dict(config).has_key('coletar_estatisticas'):
                     self.coletar_estatisticas = config['coletar_estatisticas']
@@ -129,6 +131,17 @@ class LB2Refresh:
         else:
             logging.error('Arquivo inexistente:'+str(path))
 
+    def send_backup(self):
+        # scp oracle@10.200.0.116:/u01/app/oracle/teste.dmp
+        logging.debug("Método send_backup")
+        logging.info("Enviando backup...")
+        #todo Primeiro temos que fazer a conexão ssh no destinario ou rementente
+        cmd = 'scp '+self.config.rem_osuser+'@'+self.config.rem_ip\
+              +':'+self.config.rem_backup_file+' '+self.config.backup_file
+        print cmd
+        r = self.runRemote(cmd)
+        logging.info("Resultado do Envio do backup:")
+        logging.info(r)
     def fileExists(self,path):
         '''
         Garante que o arquivo existe no SO
@@ -361,9 +374,10 @@ def run(config,dont_clean,send_backup):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
+    l.send_backup()
     if not dont_clean:
-        #Então limpe
-        l.cleanSchemas()
+          #Então limpe
+          l.cleanSchemas()
     l.runImport()
     l.recompile_objects()
 
