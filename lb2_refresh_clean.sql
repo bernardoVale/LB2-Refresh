@@ -1,18 +1,3 @@
-/*Grant necessários
-create user lb2_refresh identified by refresh default tablespace system;
-grant connect to lb2_refresh;
-grant dba to lb2_refresh;
-grant select on dba_users to lb2_refresh;
-grant select on v_$session to lb2_refresh;
-grant drop user to lb2_refresh;
-grant alter system to lb2_refresh;
-
-
---Teste
-create user teste1 identified by teste1;
-create user teste2 identified by teste2;
-create user teste3 identified by teste3;
-*/
 create or replace function lb2_refresh_clean(p_user in varchar2) return varchar2 is
 w_user varchar2(100);
  -- Controlo se todas as sessõees já morreram 0 = dead 1 = alive
@@ -55,3 +40,4 @@ begin
       return '1:LB2-Refresh:Clean: Erro ao remover o usuário '||p_user
       || '.Parando o procedimento!';
 end;
+/

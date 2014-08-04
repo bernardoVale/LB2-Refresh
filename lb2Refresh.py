@@ -343,6 +343,21 @@ class LB2Refresh:
         logging.error(result)
         return False
 
+    def buildSchema_v2(self):
+        """
+        Constroí as funções necessárias para a aplicação
+        :return:
+        """
+        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
+        logging.debug("Método buildSchema")
+        logging.info("Abrindo arquivo lb2_refresh_clean.sql")
+        with open('lb2_refresh_clean.sql') as f:
+            sql = f.read()
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if self.checkProcs_v2():
+            print "Build realizado com sucesso!"
+
     def buildSchema(self):
         """
         Constroí as funções necessárias para a aplicação
@@ -457,7 +472,8 @@ def buildStuff(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    l.buildSchema()
+    l.buildSchema_v2()
+    #l.buildSchema()
     pass
 
 def main():
