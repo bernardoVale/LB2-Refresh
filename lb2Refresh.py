@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import argparse
+import subprocess
+import re
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -202,6 +204,12 @@ class LB2Refresh:
             logging.info(res)
         logging.info("Todos os usuários foram removidos do banco!")
 
+    def call_command(self,command):
+        process = subprocess.Popen(command.split(' '),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        return process.communicate()
+
     def runRemote(self,cmd):
         """
         Executa um comando no host Destino
@@ -272,6 +280,52 @@ class LB2Refresh:
                           +self.config.backup_file)
             return False
 
+    def run_sqlplus(self, query, pretty, is_sysdba):
+        """
+        Executa um comando via sqlplus
+        :param credencias: Credenciais de logon  E.g: system/oracle@oradb
+        :param cmd: Query ou comando a ser executado
+        :param pretty Indica se o usuário quer o resultado com o regexp
+        :param Usuário é sysdba?
+        :return: stdout do sqlplus
+        """
+        credencias = self.config.user +'/'+ self.config.senha+'@'+self.config.sid
+        if is_sysdba:
+            credencias += ' as sysdba'
+        logging.debug('Método run_sqlplus')
+        logging.info('Abrindo conexao sqlplus com as credencias:'+credencias)
+        session = subprocess.Popen(['sqlplus','-S',credencias], stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info('Executando o comando:'+query)
+        session.stdin.write(query)
+        stdout, stderr = session.communicate()
+        if pretty:
+            r_unwanted = re.compile("[\n\t\r]")
+            stdout = r_unwanted.sub("", stdout)
+        if stderr != '':
+            logging.error('Falha ao executar o comando:'+query)
+            logging.error(stdout)
+            logging.error(stderr)
+            sys.exit(2)
+        else:
+            return stdout
+
+    def checkProcs_v2(self):
+        """
+        Verifica se existe a procedure no banco.
+        :return:
+        """
+        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
+        query = 'set head off \n' \
+              'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
+        result = self.run_sqlplus(query, True, True)
+        if result == 'VALID':
+            logging.info("Procedure LB2_REFRESH_CLEAN criada com sucesso!")
+            return True
+        logging.error("Procedure LB2_REFRESH_CLEAN inexistente no banco. Execute o modo --build novamente")
+        logging.error(result)
+        return False
+
     def checkProcs(self):
         """
         Verifica se existe a procedure no banco.
@@ -303,7 +357,7 @@ class LB2Refresh:
             sys.exit(2)
         cur = con.cursor()
         cur.execute(sql)
-        if self.checkProcs():
+        if self.checkProcs_v2():
             print "Build realizado com sucesso!"
 
     def runImport(self):
@@ -325,7 +379,20 @@ class LB2Refresh:
         logging.info("Resultado do Import")
         logging.info(r)
 
+    def recompile_v2(self):
+        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
+        logging.debug("Método recompile_objects")
+        logging.info("Realizando a recompilação dos objetos...")
+        query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
+        result = self.run_sqlplus(query,False,True)
+        logging.info(result)
+
     def recompile_objects(self):
+        """
+        Método que executa a procedure de recompilação dos objetos
+        do usuário.
+        :return:
+        """
         logging.debug("Método recompile_objects")
         cmd = 'echo exit | sqlplus '+self.config.user+'/'+self.config.senha+' as sysdba @$ORACLE_HOME/rdbms/admin/utlrp.sql'
         logging.info("Realizando a recompilação dos objetos...")
@@ -393,8 +460,7 @@ def buildStuff(config):
     l.buildSchema()
     pass
 
-# Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
-if __name__ == '__main__':
+def main():
     r = parse_args()
     # Configuração do Log
     #todo Suporte ao windows! Tirar a /
@@ -414,3 +480,7 @@ if __name__ == '__main__':
     else:
         logging.info("Executando no modo normal!")
         run(r.config,r.dont_clean,r.send_backup)
+
+# Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
+if __name__ == '__main__':
+    main()
