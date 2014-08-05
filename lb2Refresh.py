@@ -176,33 +176,6 @@ class LB2Refresh:
         logging.info("Conexão estabelecida!")
         return conn
 
-    def cleanSchemas_v2(self):
-        """
-        Irá remover todos os schemas do banco de dados
-        Com base utilizando os nomes contidos na lista de schemas
-        :return:
-        """
-        logging.debug("Método cleanSchemas")
-        logging.info("Iniciando limpeza...")
-        x = lambda y: True if 'Resultado:0:' in y else False
-        for schema in self.config.schemas:
-            logging.info("Realizando limpeza do usuario "+schema)
-            sql = "set serveroutput on; \n" \
-              "declare \n" \
-              "r varchar2(4000); \n" \
-              "begin \n" \
-              "r := lb2_refresh_clean('"+schema+"'); \n" \
-              "dbms_output.put_line('Resultado:' || r); \n" \
-              "end; \n" \
-              "/"
-            r = self.run_sqlplus(sql,True,True)
-            logging.info(r)
-            if x(r):
-                logging.info("Usuario "+schema+" removido com sucesso")
-            else:
-                self.leaveWithMessage("Impossivel remover o usuario "+schema+" finalizando...")
-        logging.info("Todos os usuários foram removidos do banco!")
-
     def cleanSchemas(self):
         """
         Irá remover todos os schemas do banco de dados
@@ -340,21 +313,6 @@ class LB2Refresh:
         else:
             return stdout
 
-    def checkProcs_v2(self):
-        """
-        Verifica se existe a procedure no banco.
-        :return:
-        """
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
-        query = 'set head off \n' \
-              'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
-        result = self.run_sqlplus(query, True, True)
-        if result == 'VALID':
-            logging.info("Procedure LB2_REFRESH_CLEAN criada com sucesso!")
-            return True
-        logging.error("Procedure LB2_REFRESH_CLEAN inexistente no banco. Execute o modo --build novamente")
-        logging.error(result)
-        return False
 
     def checkProcs(self):
         """
@@ -373,21 +331,6 @@ class LB2Refresh:
         logging.error(result)
         return False
 
-    def buildSchema_v2(self):
-        """
-        Constroí as funções necessárias para a aplicação
-        :return:
-        """
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
-        logging.debug("Método buildSchema")
-        logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        with open('lb2_refresh_clean.sql') as f:
-            sql = f.read()
-        result = self.run_sqlplus(sql,False,True)
-        logging.info(result)
-        if self.checkProcs_v2():
-            print "Build realizado com sucesso!"
-
     def buildSchema(self):
         """
         Constroí as funções necessárias para a aplicação
@@ -402,7 +345,7 @@ class LB2Refresh:
             sys.exit(2)
         cur = con.cursor()
         cur.execute(sql)
-        if self.checkProcs_v2():
+        if self.checkProcs():
             print "Build realizado com sucesso!"
 
     def runImport(self):
@@ -423,14 +366,6 @@ class LB2Refresh:
         r = self.runRemote(cmd)
         logging.info("Resultado do Import")
         logging.info(r)
-
-    def recompile_v2(self):
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
-        logging.debug("Método recompile_objects")
-        logging.info("Realizando a recompilação dos objetos...")
-        query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
-        result = self.run_sqlplus(query,False,True)
-        logging.info(result)
 
     def recompile_objects(self):
         """
@@ -486,12 +421,12 @@ def run(config,dont_clean,send_backup):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    #l.send_backup()
+    l.send_backup()
     if not dont_clean:
           #Então limpe
-          l.cleanSchemas_v2()
-    #l.runImport()
-    #l.recompile_objects()
+          l.cleanSchemas()
+    l.runImport()
+    l.recompile_objects()
 
 def buildStuff(config):
     """
@@ -502,9 +437,7 @@ def buildStuff(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    l.buildSchema_v2()
-    #l.buildSchema()
-    pass
+    l.buildSchema()
 
 def main():
     r = parse_args()

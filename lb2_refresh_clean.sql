@@ -40,4 +40,3 @@ begin
       return '1:LB2-Refresh:Clean: Erro ao remover o usuário '||p_user
       || '.Parando o procedimento!';
 end;
-/
