@@ -126,6 +126,39 @@ class TestOracle(unittest.TestCase):
         result = self.r.run_sqlplus(query,False,True)
         self.assertEqual(result,'')
 
+    def test_lb2refresh_clean_v2(self):
+        """
+        Teste da procedure com chamada via sqlplus
+        :return:
+        """
+        x = lambda y: True if 'Resultado:0:' in y else False
+        sql = "create user capa identified by capudo;"
+        schema = "CAPA"
+        r = self.r.run_sqlplus(sql,False,True)
+        print r
+        sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('"+schema+"'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+        r = self.r.run_sqlplus(sql,True,True)
+        print r
+        self.assertEqual(x(r),True)
+        sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('CAPUDOSO'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+        r = self.r.run_sqlplus(sql,False,True)
+        print r
+        self.assertEqual(x(r),False)
+
     def test_lb2refresh_clean(self):
         """
         Testa a função LB2-Refresh-Clean

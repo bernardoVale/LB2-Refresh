@@ -17,6 +17,6 @@
     },
 	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_20140801.dmp",
 	"logfile": "import_sales.log",
-	"schemas": ["SALES"],
+	"schemas": ["CAPA","CAPUDOR"],
     "remap_tablespace" : "SALES_DATA:TSD_SISTEMA"
 }

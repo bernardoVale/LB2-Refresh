@@ -119,6 +119,7 @@ class LB2Refresh:
         """
         logging.debug('Método buildConfig')
         self.config = Config(self.config)
+
     def readConfig(self,path):
         '''
         Realiza a leitura do JSON e adiciona a variavel config.
@@ -144,6 +145,7 @@ class LB2Refresh:
         r = self.runRemote(cmd)
         logging.info("Resultado do Envio do backup:")
         logging.info(r)
+
     def fileExists(self,path):
         '''
         Garante que o arquivo existe no SO
@@ -155,6 +157,7 @@ class LB2Refresh:
         #Agora tambem sei brincar de lambda
         x = lambda y: True if os.path.isfile(y) and os.access(y, os.R_OK) else False
         return x(path)
+
     def estabConnection(self,c=Config):
         """
         Tenta conectar no Oracle com as credenciais
@@ -172,6 +175,33 @@ class LB2Refresh:
             return False
         logging.info("Conexão estabelecida!")
         return conn
+
+    def cleanSchemas_v2(self):
+        """
+        Irá remover todos os schemas do banco de dados
+        Com base utilizando os nomes contidos na lista de schemas
+        :return:
+        """
+        logging.debug("Método cleanSchemas")
+        logging.info("Iniciando limpeza...")
+        x = lambda y: True if 'Resultado:0:' in y else False
+        for schema in self.config.schemas:
+            logging.info("Realizando limpeza do usuario "+schema)
+            sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('"+schema+"'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+            r = self.run_sqlplus(sql,True,True)
+            logging.info(r)
+            if x(r):
+                logging.info("Usuario "+schema+" removido com sucesso")
+            else:
+                self.leaveWithMessage("Impossivel remover o usuario "+schema+" finalizando...")
+        logging.info("Todos os usuários foram removidos do banco!")
 
     def cleanSchemas(self):
         """
@@ -456,12 +486,12 @@ def run(config,dont_clean,send_backup):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    l.send_backup()
+    #l.send_backup()
     if not dont_clean:
           #Então limpe
-          l.cleanSchemas()
-    l.runImport()
-    l.recompile_objects()
+          l.cleanSchemas_v2()
+    #l.runImport()
+    #l.recompile_objects()
 
 def buildStuff(config):
     """
