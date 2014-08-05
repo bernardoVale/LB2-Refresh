@@ -265,6 +265,20 @@ class LB2Refresh:
                           +self.config.backup_file)
             return False
 
+    def test_conn(self):
+        """
+        Teste de conexão e credenciais
+        :return:
+        """
+        query = 'set head off \n' \
+                'select 1+1 from dual;'
+        result = self.run_sqlplus(query,True,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            return False
+        else:
+            return True
+
     def run_sqlplus(self, query, pretty, is_sysdba):
         """
         Executa um comando via sqlplus
@@ -288,10 +302,9 @@ class LB2Refresh:
             r_unwanted = re.compile("[\n\t\r]")
             stdout = r_unwanted.sub("", stdout)
         if stderr != '':
-            logging.error('Falha ao executar o comando:'+query)
             logging.error(stdout)
             logging.error(stderr)
-            sys.exit(2)
+            self.leaveWithMessage('Falha ao executar o comando:'+query)
         else:
             return stdout
 
@@ -382,7 +395,7 @@ def testMode(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    if l.estabConnection(l.config):
+    if l.test_conn():
         print "Conexão OK!"
         r = l.runRemote("echo -n teste")
         if r == "teste":
@@ -407,12 +420,13 @@ def run(config,dont_clean,send_backup):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    #l.send_backup()
+    if send_backup:
+        l.send_backup()
     if not dont_clean:
           #Então limpe
           l.cleanSchemas_v2()
-    #l.runImport()
-    #l.recompile_objects()
+    l.runImport()
+    l.recompile_objects()
 
 def buildStuff(config):
     """
