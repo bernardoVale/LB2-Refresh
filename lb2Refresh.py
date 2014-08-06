@@ -1,12 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import argparse
-import subprocess
-import re
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
+import argparse
 import json
 import sys
 import os
@@ -207,12 +205,6 @@ class LB2Refresh:
             logging.info(res)
         logging.info("Todos os usuários foram removidos do banco!")
 
-    def call_command(self,command):
-        process = subprocess.Popen(command.split(' '),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-        return process.communicate()
-
     def runRemote(self,cmd):
         """
         Executa um comando no host Destino
@@ -282,37 +274,6 @@ class LB2Refresh:
             logging.error("Backup inexistente, verifique o arquivo:"
                           +self.config.backup_file)
             return False
-
-    def run_sqlplus(self, query, pretty, is_sysdba):
-        """
-        Executa um comando via sqlplus
-        :param credencias: Credenciais de logon  E.g: system/oracle@oradb
-        :param cmd: Query ou comando a ser executado
-        :param pretty Indica se o usuário quer o resultado com o regexp
-        :param Usuário é sysdba?
-        :return: stdout do sqlplus
-        """
-        credencias = self.config.user +'/'+ self.config.senha+'@'+self.config.sid
-        if is_sysdba:
-            credencias += ' as sysdba'
-        logging.debug('Método run_sqlplus')
-        logging.info('Abrindo conexao sqlplus com as credencias:'+credencias)
-        session = subprocess.Popen(['sqlplus','-S',credencias], stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info('Executando o comando:'+query)
-        session.stdin.write(query)
-        stdout, stderr = session.communicate()
-        if pretty:
-            r_unwanted = re.compile("[\n\t\r]")
-            stdout = r_unwanted.sub("", stdout)
-        if stderr != '':
-            logging.error('Falha ao executar o comando:'+query)
-            logging.error(stdout)
-            logging.error(stderr)
-            sys.exit(2)
-        else:
-            return stdout
-
 
     def checkProcs(self):
         """

@@ -13,7 +13,6 @@ import os
 import os.path
 import logging
 import datetime
-import pxssh
 
 
 def parse_args():
@@ -133,22 +132,22 @@ class LB2Refresh:
         else:
             logging.error('Arquivo inexistente:'+str(path))
 
-    def send_backup(self):
+    def send_backup_v2(self):
         """
         Método responsável por enviar a copia do backup via scp
         do remetente para o destino
         :return:
         """
-
         logging.debug("Método send_backup")
         logging.info("Enviando backup...")
         #todo Primeiro temos que fazer a conexão ssh no destinario ou rementente
         cmd = 'scp '+self.config.rem_osuser+'@'+self.config.rem_ip\
               +':'+self.config.rem_backup_file+' '+self.config.backup_file
         print cmd
-        r = self.runRemote(cmd)
-        logging.info("Resultado do Envio do backup:")
-        logging.info(r)
+        r, err = self.call_command(cmd)
+        if err != "":
+            self.leaveWithMessage(err)
+        logging.info("Backup enviado com sucesso!")
 
     def fileExists(self,path):
         '''
@@ -190,36 +189,11 @@ class LB2Refresh:
         logging.info("Todos os usuários foram removidos do banco!")
 
     def call_command(self,command):
+
         process = subprocess.Popen(command.split(' '),
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
         return process.communicate()
-
-    def runRemote(self,cmd):
-        """
-        Executa um comando no host Destino
-        :param cmd: comando a ser executado (list)
-        :return: Resultado do comando
-        """
-        result = ""
-        logging.debug("Método runRemote")
-        # 48 horas
-        #todo retornar resultados periódicos ao invés de um unico ao final.
-        s = pxssh.pxssh(timeout=172800, maxread=999999999)
-        logging.info("Iniciando conexão SSH")
-        if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
-            logging.error("Falha ao realizar conexão remota:")
-            logging.error("Credencias: ip:"+self.config.ip
-                          +" user:"+self.config.osuser+" senha:"+self.config.ospwd)
-            sys.exit(2)
-        else:
-            logging.info("Conexao realizada. Executando comando:"+cmd)
-            s.sendline (cmd)
-            s.prompt()         # match the prompt
-            # Gambi pra tirar o comando que eu chamei
-            result = '\n'.join(str(s.before).split('\n')[1::])
-            s.logout()
-        return result
 
     def leaveWithMessage(self,message):
         """
@@ -231,22 +205,25 @@ class LB2Refresh:
         logging.error("Finalizando o script...")
         sys.exit(2)
 
-    def checkOraVariables(self):
+    def checkOraVariables_v2(self):
         """
         Responsável por verificar se todas as variáveis necessárias
-        a importação estão OK!
+        a importação estão OK! Verificando as variáveis de ambinete
+        Tenha certeza que o ambiente contem todas as variaveis necessárias
 
         Caso aconteça algum erro o script termina
         :return: (bool) Se estiver tudo OK
         """
         logging.debug("Método checkOraVariables")
-        result = self.runRemote(". "+self.config.var_dir+";env")
+        command = "env"
+        result = self.call_command(command)
+        result = ''.join(result)
         if "-bash" in result:
             self.leaveWithMessage(result)
         if "ORACLE_HOME" not in result:
-            self.leaveWithMessage("ORACLE_HOME não foi setado. Verifique o arquivo:"
+            self.leaveWithMessage("ORACLE_HOME nao foi setado. Verifique o arquivo:"
                           +self.config.var_dir)
-        result = self.runRemote(". "+self.config.var_dir+";impdp help=y")
+        result = self.call_command("impdp help=y")
         if "-bash" in result:
             self.leaveWithMessage(result)
         logging.info("Tudo OK. Podemos iniciar a importação!")
@@ -313,7 +290,6 @@ class LB2Refresh:
         Verifica se existe a procedure no banco.
         :return:
         """
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
         query = 'set head off \n' \
               'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
         result = self.run_sqlplus(query, True, True)
@@ -329,7 +305,6 @@ class LB2Refresh:
         Constroí as funções necessárias para a aplicação
         :return:
         """
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
         logging.debug("Método buildSchema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
         with open('lb2_refresh_clean.sql') as f:
@@ -339,43 +314,33 @@ class LB2Refresh:
         if self.checkProcs_v2():
             print "Build realizado com sucesso!"
 
-    def runImport(self):
+    def runImport_v2(self):
         """
         Roda o impdp de acordo com as especificações do Config File
         :rtype : object
         :return:
         """
-        cmd = "impdp \\""\""+self.config.user+"/"+self.config.senha+"@"+self.config.sid+" AS SYSDBA \\\" " \
+        logging.debug("Método runImport_v2")
+        cmd = "impdp '"+self.config.user+"/"+self.config.senha+"@"+self.config.sid+" AS SYSDBA' " \
         "directory="+self.config.directory+" dumpfile="+self.cappedFilePath(self.config.backup_file)+"" \
         " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
-        if hasattr(self.config, 'remap_tablespace'):
+	if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
         if hasattr(self.config, 'remap_schema'):
             cmd = cmd + " remap_schema="+self.config.remap_schema
-        r = self.runRemote(cmd)
+        err, r = self.call_command(cmd)
+        if err != "":
+            self.leaveWithMessage(err)
         logging.info("Resultado do Import")
         logging.info(r)
 
     def recompile_v2(self):
-        #todo Metodo para desuportar o pexpect e cx_oracle. Remover o antigo.
         logging.debug("Método recompile_objects")
         logging.info("Realizando a recompilação dos objetos...")
         query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
         result = self.run_sqlplus(query,False,True)
-        logging.info(result)
-
-    def recompile_objects(self):
-        """
-        Método que executa a procedure de recompilação dos objetos
-        do usuário.
-        :return:
-        """
-        logging.debug("Método recompile_objects")
-        cmd = 'echo exit | sqlplus '+self.config.user+'/'+self.config.senha+' as sysdba @$ORACLE_HOME/rdbms/admin/utlrp.sql'
-        logging.info("Realizando a recompilação dos objetos...")
-        result = self.runRemote(cmd)
         logging.info(result)
 
     def cappedFilePath(self, file):
@@ -396,18 +361,18 @@ def testMode(config):
     l.readConfig(config)
     l.buildConfig()
     if l.test_conn():
-        print "Conexão OK!"
-        r = l.runRemote("echo -n teste")
-        if r == "teste":
-            print "Conexão SSH OK!"
-            if l.checkOraVariables():
+        print "Conexão sqlplus OK!"
+        r,err = l.call_command('echo -n teste')
+        if r == "teste" and err == "":
+            print "Chamada ao bash OK!"
+            if l.checkOraVariables_v2():
                 print "Variáveis de Ambiente OK!"
             else:
                 print "Erro exportando as variáveis!"
         else:
-            print "Erro na conexão SSH"
+            print "Erro na chamada do bash"
     else:
-        print "Erro na conexão!"
+        print "Erro na conexão com o sqlplus!"
 
 def run(config,dont_clean,send_backup):
     """
@@ -421,12 +386,12 @@ def run(config,dont_clean,send_backup):
     l.readConfig(config)
     l.buildConfig()
     if send_backup:
-        l.send_backup()
+         l.send_backup_v2()
     if not dont_clean:
-          #Então limpe
-          l.cleanSchemas_v2()
-    l.runImport()
-    l.recompile_objects()
+        #Então limpe
+        l.cleanSchemas_v2()
+    l.runImport_v2()
+    l.recompile_v2()
 
 def buildStuff(config):
     """
@@ -438,7 +403,6 @@ def buildStuff(config):
     l.readConfig(config)
     l.buildConfig()
     l.buildSchema_v2()
-    pass
 
 def main():
     r = parse_args()

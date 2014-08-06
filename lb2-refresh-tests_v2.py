@@ -8,9 +8,23 @@ import re
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
-from lb2Refresh import *
-import cx_Oracle
+from lb2Refresh_v2 import *
 
+class TestCommands(unittest.TestCase):
+
+    def setUp(self):
+        self.r = LB2Refresh()
+
+    def test_command(self):
+        """
+        Testa a execução de um comando simples via subprocess
+        :return:
+        """
+        output,err = self.r.call_command('echo -n teste')
+        self.assertEqual('teste',output)
+
+        print err
+        print output
 
 class TestConfigFile(unittest.TestCase):
     """Testes Unitários referentes ao arquivo de configuração"""
@@ -78,53 +92,69 @@ class TestOracle(unittest.TestCase):
         self.r.readConfig('config.json')
         self.r.buildConfig()
 
-    def test_connection(self):
-        c = Config()
-        c.senha = 'oracle'
-        c.sid = 'oradb'
-        c.user = 'sys'
-        c.ip = "10.200.0.204"
-        mustByConnection = self.r.estabConnection(c)
-        self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
-
-    def test_lb2refresh_clean(self):
+    def test_procedure_is_valid(self):
         """
-        Testa a função LB2-Refresh-Clean
-        Se envio um usuário inválido o primeiro caracter deverá ser 1
-        Caso tudo OK 0
+        Verifica se a procedure do LB2_REFRESH existe e está valida.
         :return:
         """
-        c = Config()
-        c.senha = 'oracle'
-        c.sid = 'oradb'
-        c.user = 'sys'
-        c.ip = "10.200.0.204"
-        c.schemas = "CARALHUDO"
-        con = self.r.estabConnection(c)
-        cursor = con.cursor()
-        cursor.execute("create user capa identified by capa")
-        cur = con.cursor()
-        res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, ['CAPA'])
-        self.assertEqual(res[0:1],"0")
-        res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, ['CAPACAPUDO'])
-        self.assertEqual(res[0:1],"1")
-        cur.close()
-        con.close()
+        self.r.config.user = 'system'
+        query = 'set head off \n' \
+              'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
+        result = self.r.run_sqlplus(query,True,False)
+        self.assertEqual('VALID',result)
 
-    def test_check_host(self):
+    def test_compile(self):
         """
-        Verifica a conectividade com o host
+        Testa a recompilação de objetos
         :return:
         """
-        teste = self.r.runRemote("echo -n teste")
-        self.assertEqual(teste,"teste")
+        #Esse método so vai funcionar se estiver no Oracle server
+        #Esse método deve falhar!
+
+        self.r.config.user = 'sys'
+        query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
+        result = self.r.run_sqlplus(query,False,True)
+        self.assertEqual(result,'')
+
+    def test_lb2refresh_clean_v2(self):
+        """
+        Teste da procedure com chamada via sqlplus
+        :return:
+        """
+        x = lambda y: True if 'Resultado:0:' in y else False
+        sql = "create user capa identified by capudo;"
+        schema = "CAPA"
+        r = self.r.run_sqlplus(sql,False,True)
+        print r
+        sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('"+schema+"'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+        r = self.r.run_sqlplus(sql,True,True)
+        print r
+        self.assertEqual(x(r),True)
+        sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('CAPUDOSO'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+        r = self.r.run_sqlplus(sql,False,True)
+        print r
+        self.assertEqual(x(r),False)
 
     def test_oracleVariables(self):
          """
          Verifica as variáveis de ambiente.
          :return:
          """
-         isOk = self.r.checkOraVariables()
+         isOk = self.r.checkOraVariables_v2()
          self.assertEqual(isOk,True)
 
     def test_hasRefresh_clean(self):
