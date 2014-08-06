@@ -43,6 +43,11 @@ def parse_args():
                         dest='dont_clean',
                         help='Realiza a importação sem remover os schemas do banco destino.')
 
+    parser.add_argument('--coletar', action='store_true', default=False,
+                        dest='coletar_estatisticas',
+                        help='Realiza a coleta de estatisticas após a importação.\n Verificar o arquivo:'
+                             ' coleta_estatisticas.sql')
+
     parser.add_argument('--sendbackup', action='store_true', default=False,
                         dest='send_backup',
                         help='Envia o .dmp para o servidor destino antes da importação. \n'
@@ -93,8 +98,6 @@ class Config:
                     self.rem_ospwd = config['remetente']['ospwd']
                     self.rem_backup_file = config['remetente']['backup_file']
                 # Variáveis opcionais
-                if dict(config).has_key('coletar_estatisticas'):
-                    self.coletar_estatisticas = config['coletar_estatisticas']
                 if dict(config).has_key('remap_tablespace'):
                     self.remap_tablespace = config['remap_tablespace']
                 if dict(config).has_key('remap_schema'):
@@ -256,6 +259,22 @@ class LB2Refresh:
         else:
             return True
 
+    def run_coleta_estatisticas(self):
+        """
+        Executa a coleta de estatisticas na base destino.
+        :return:
+        """
+        logging.debug("Método run_coleta_estatisticas")
+        logging.info("Abrindo arquivo coleta_estatisticas_v2.sql")
+        with open('coleta_estatisticas_v2.sql') as f:
+            sql = f.read()
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            self.leaveWithMessage("Erros ao coletar as estatisticas!")
+        logging.info("Coleta de estatisticas executado com sucesso!")
+
+
     def run_sqlplus(self, query, pretty, is_sysdba):
         """
         Executa um comando via sqlplus
@@ -374,24 +393,27 @@ def testMode(config):
     else:
         print "Erro na conexão com o sqlplus!"
 
-def run(config,dont_clean,send_backup):
+def run(config,dont_clean,send_backup,coletar_estatisticas):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
     :param dont_clean: Especifica se devo chamar o método cleanSchemas
     :param send_backup: Especifica se é necessário enviar o backup ao destino.
+    :param coletar_estatisticas: Especifica se deve realizar coleta de estatisticas
     :return: None
     """
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    if send_backup:
-         l.send_backup_v2()
-    if not dont_clean:
-        #Então limpe
-        l.cleanSchemas_v2()
-    l.runImport_v2()
-    l.recompile_v2()
+    # if send_backup:
+    #      l.send_backup_v2()
+    # if not dont_clean:
+    #     #Então limpe
+    #     l.cleanSchemas_v2()
+    # l.runImport_v2()
+    # l.recompile_v2()
+    if coletar_estatisticas:
+        l.run_coleta_estatisticas()
 
 def buildStuff(config):
     """
@@ -423,7 +445,7 @@ def main():
         buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config,r.dont_clean,r.send_backup)
+        run(r.config,r.dont_clean,r.send_backup,r.coletar_estatisticas)
 
 # Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':
