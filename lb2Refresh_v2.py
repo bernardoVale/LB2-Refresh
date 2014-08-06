@@ -307,7 +307,7 @@ class LB2Refresh:
         """
         logging.debug("Método buildSchema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        with open('lb2_refresh_clean.sql') as f:
+        with open('lb2_refresh_clean_v2.sql') as f:
             sql = f.read()
         result = self.run_sqlplus(sql,False,True)
         logging.info(result)
