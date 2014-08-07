@@ -22,6 +22,7 @@ def parse_args():
     :return: Resultado da analise, contendo todas as variáveis resultantes
     """
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+
     parser.add_argument('--test', action='store_true', default=False,
                         dest='is_testing',
                         help='Realiza uma bateria de testes antes de importar.')
@@ -42,6 +43,10 @@ def parse_args():
     parser.add_argument('--noclean', action='store_true', default=False,
                         dest='dont_clean',
                         help='Realiza a importação sem remover os schemas do banco destino.')
+
+    parser.add_argument('--posscript', action='store',
+                        dest='pos_script',
+                        help='Script .sql para executar após todos os procedimentos.')
 
     parser.add_argument('--coletar', action='store_true', default=False,
                         dest='coletar_estatisticas',
@@ -333,6 +338,22 @@ class LB2Refresh:
         if self.checkProcs_v2():
             print "Build realizado com sucesso!"
 
+    def run_pos_script(self,script):
+        """
+        Executa um script .sql passado como parametro
+        :return:
+        """
+        logging.debug("Método run_pos_script")
+        logging.info("Abrindo arquivo "+script)
+        with open(script) as f:
+            sql = f.read()
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            logging.error(result)
+            self.leaveWithMessage("Erro ao executar o script:"+script)
+        logging.info("Pos script executado com sucesso!")
+
     def runImport_v2(self):
         """
         Roda o impdp de acordo com as especificações do Config File
@@ -393,27 +414,32 @@ def testMode(config):
     else:
         print "Erro na conexão com o sqlplus!"
 
-def run(config,dont_clean,send_backup,coletar_estatisticas):
+def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
     :param dont_clean: Especifica se devo chamar o método cleanSchemas
     :param send_backup: Especifica se é necessário enviar o backup ao destino.
     :param coletar_estatisticas: Especifica se deve realizar coleta de estatisticas
+    :param pos_script: Script para ser executado após o script.
     :return: None
     """
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    # if send_backup:
-    #      l.send_backup_v2()
-    # if not dont_clean:
-    #     #Então limpe
-    #     l.cleanSchemas_v2()
-    # l.runImport_v2()
-    # l.recompile_v2()
+    if send_backup:
+      l.send_backup_v2()
+    if not dont_clean:
+         #Então limpe
+        l.cleanSchemas_v2()
+    l.runImport_v2()
+    l.recompile_v2()
     if coletar_estatisticas:
         l.run_coleta_estatisticas()
+    if pos_script != None:
+        l.run_pos_script(pos_script)
+
+
 
 def buildStuff(config):
     """
@@ -436,7 +462,6 @@ def main():
     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
-
     if r.is_testing:
         logging.info("Executando em modo --TEST")
         testMode(r.config)
@@ -445,7 +470,7 @@ def main():
         buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config,r.dont_clean,r.send_backup,r.coletar_estatisticas)
+        run(r.config,r.dont_clean,r.send_backup,r.coletar_estatisticas,r.pos_script)
 
 # Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':

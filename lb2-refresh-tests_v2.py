@@ -31,26 +31,24 @@ class TestConfigFile(unittest.TestCase):
 
     def setUp(self):
         self.r = LB2Refresh()
+        self.r.readConfig('config.json')
 
     def test_fileExists(self):
         """ Testa se os arquivos existem """
 
-        cfg = self.r.fileExists('/Users/bernardovale/config.json')
-        cfg2 = self.r.fileExists('/Users/bernardovale/arquivoinexistente.txt')
+        cfg = self.r.fileExists('config.json')
+        cfg2 = self.r.fileExists('arquivoinexistente.txt')
         self.assertEqual(cfg, True)
         self.assertEqual(cfg2, False)
 
     def test_configOpen(self):
         '''Testa se o JSON foi aberto corretamente'''
-
-        self.r.readConfig('/Users/bernardovale/Documents/LB2/scripts/lb2_refresh/config.json')
         self.assertIsInstance(self.r.config, dict)
 
     def test_backupExists(self):
         '''Testa a propriedade backup_file do arquivo JSON'''
 
-        self.r.readConfig('/Users/bernardovale/Documents/LB2/scripts/lb2_refresh/config.json')
-        self.assertEqual(self.r.config['backup_file'], '/Users/bernardovale/dpfull.dmp')
+        self.assertEqual(self.r.config['backup_file'], '/backup/datapump/dpfull_20140805.dmp')
         self.assertEqual(self.r.fileExists(self.r.config['backup_file']), True)
 
     def test_truncate_file_dir(self):
@@ -63,24 +61,6 @@ class TestConfigFile(unittest.TestCase):
         file2 = self.r.cappedFilePath('teste.dmp')
         self.assertEqual(file,'teste.dmp')
         self.assertEqual(file2,'teste.dmp')
-
-    def test_config_properties(self):
-        '''Testa todas as propriedades do JSON'''
-
-        self.r.readConfig('/Users/bernardovale/Documents/LB2/scripts/lb2_refresh/config.json')
-        self.r.buildConfig()
-        self.assertEqual(self.r.config.ip, '10.200.0.116')
-        self.assertEqual(self.r.config.sid, 'rest')
-        self.assertEqual(self.r.config.senha, 'refresh')
-        self.assertEqual(self.r.config.ospwd, 'oracle')
-        self.assertEqual(self.r.config.osuser, 'oracle')
-        self.assertEqual(self.r.config.user, 'lb2_refresh')
-        self.assertEqual(self.r.config.var_dir, '/home/oracle/.bash_profile')
-        self.assertEqual(self.r.config.directory, 'DATAPUMP')
-        self.assertEqual(self.r.config.backup_file, '/Users/bernardovale/dpfull.dmp')
-        self.assertEqual(self.r.config.logfile, 'import_tasy.log')
-        self.assertEqual(self.r.config.schemas, ['TASY'])
-        self.assertEqual(self.r.config.coletar_estatisticas, 'false')
 
 class TestOracle(unittest.TestCase):
     """ Testes referentes a conectividade com o

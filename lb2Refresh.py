@@ -39,6 +39,10 @@ def parse_args():
                         dest='log_dir',
                         help='Diretório para salvar o log da operação.')
 
+    parser.add_argument('--posscript', action='store',
+                        dest='pos_script',
+                        help='Script .sql para executar após todos os procedimentos.')
+
     parser.add_argument('--noclean', action='store_true', default=False,
                         dest='dont_clean',
                         help='Realiza a importação sem remover os schemas do banco destino.')

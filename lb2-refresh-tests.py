@@ -149,4 +149,7 @@ class TestOracle(unittest.TestCase):
         con.close()
 
 if __name__ == '__main__':
+    import sys
+    config = sys.argv[1]
+    print config
     unittest.main()
