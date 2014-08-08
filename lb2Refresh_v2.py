@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import argparse
+import subprocess
+import re
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
-import argparse
 import json
 import sys
 import os
 import os.path
-import cx_Oracle
 import logging
 import datetime
-import pxssh
 
 
 def parse_args():
@@ -22,6 +22,7 @@ def parse_args():
     :return: Resultado da analise, contendo todas as variáveis resultantes
     """
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+
     parser.add_argument('--test', action='store_true', default=False,
                         dest='is_testing',
                         help='Realiza uma bateria de testes antes de importar.')
@@ -39,13 +40,13 @@ def parse_args():
                         dest='log_dir',
                         help='Diretório para salvar o log da operação.')
 
-    parser.add_argument('--posscript', action='store',
-                        dest='pos_script',
-                        help='Script .sql para executar após todos os procedimentos.')
-
     parser.add_argument('--noclean', action='store_true', default=False,
                         dest='dont_clean',
                         help='Realiza a importação sem remover os schemas do banco destino.')
+
+    parser.add_argument('--posscript', action='store',
+                        dest='pos_script',
+                        help='Script .sql para executar após todos os procedimentos.')
 
     parser.add_argument('--coletar', action='store_true', default=False,
                         dest='coletar_estatisticas',
@@ -61,7 +62,7 @@ def parse_args():
                              'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.\n'
                              'NECESSÁRIO FAZER A TROCA DE CHAVES DO SSH')
 
-    parser.add_argument('--version', action='version', version='%(prog)s v1.0 BETA',
+    parser.add_argument('--version', action='version', version='%(prog)s v2.0',
     help='Exibe a versão atual do sistema.')
     p = parser.parse_args()
     #todo pesquisar suporte do argparse para parametros que não podem ser utilizados juntos
@@ -139,17 +140,22 @@ class LB2Refresh:
         else:
             logging.error('Arquivo inexistente:'+str(path))
 
-    def send_backup(self):
-        # scp oracle@10.200.0.116:/u01/app/oracle/teste.dmp
+    def send_backup_v2(self):
+        """
+        Método responsável por enviar a copia do backup via scp
+        do remetente para o destino
+        :return:
+        """
         logging.debug("Método send_backup")
         logging.info("Enviando backup...")
         #todo Primeiro temos que fazer a conexão ssh no destinario ou rementente
         cmd = 'scp '+self.config.rem_osuser+'@'+self.config.rem_ip\
               +':'+self.config.rem_backup_file+' '+self.config.backup_file
         print cmd
-        r = self.runRemote(cmd)
-        logging.info("Resultado do Envio do backup:")
-        logging.info(r)
+        r, err = self.call_command(cmd)
+        if err != "":
+            self.leaveWithMessage(err)
+        logging.info("Backup enviado com sucesso!")
 
     def fileExists(self,path):
         '''
@@ -163,80 +169,39 @@ class LB2Refresh:
         x = lambda y: True if os.path.isfile(y) and os.access(y, os.R_OK) else False
         return x(path)
 
-    def estabConnection(self,c=Config):
-        """
-        Tenta conectar no Oracle com as credenciais
-        :param c: Instancia do Arquivo de Config
-        :return: Uma conexão ativa com o banco
-        """
-        logging.debug('Método estabConnection')
-        try:
-            logging.info('Tentando conectar com o banco...')
-            #So conecto com sysdba
-            conn = cx_Oracle.connect(c.user + '/' + c.senha + '@' + c.ip + '/' +c.sid,mode = cx_Oracle.SYSDBA)
-        except:
-            logging.error('Não foi possível estabelecer a conexão')
-            logging.error(sys.exc_info()[1])
-            return False
-        logging.info("Conexão estabelecida!")
-        return conn
-
-    def cleanSchemas(self):
+    def cleanSchemas_v2(self):
         """
         Irá remover todos os schemas do banco de dados
         Com base utilizando os nomes contidos na lista de schemas
         :return:
         """
         logging.debug("Método cleanSchemas")
-        con = self.estabConnection(self.config)
-        if isinstance(con,bool):
-            sys.exit(2)
-        cur = con.cursor()
         logging.info("Iniciando limpeza...")
+        x = lambda y: True if 'Resultado:0:' in y else False
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario "+schema)
-            #Necessário para pegar os prints do dbms_output
-            cur.callproc("dbms_output.enable")
-            res  = cur.callfunc('lb2_refresh_clean', cx_Oracle.STRING, [schema])
-            #cur.callproc('where.my_package.ger_result', ['something',])
-            statusVar = cur.var(cx_Oracle.NUMBER)
-            lineVar = cur.var(cx_Oracle.STRING)
-            while True:
-                cur.callproc("dbms_output.get_line", (lineVar, statusVar))
-                if statusVar.getvalue() != 0:
-                    break
-                logging.info(lineVar.getvalue())
-            #O primeiro caracter define o sucesso.
-            if res[0] == "1":
-                self.leaveWithMessage(res)
-            logging.info(res)
+            sql = "set serveroutput on; \n" \
+              "declare \n" \
+              "r varchar2(4000); \n" \
+              "begin \n" \
+              "r := lb2_refresh_clean('"+schema+"'); \n" \
+              "dbms_output.put_line('Resultado:' || r); \n" \
+              "end; \n" \
+              "/"
+            r = self.run_sqlplus(sql,True,True)
+            logging.info(r)
+            if x(r):
+                logging.info("Usuario "+schema+" removido com sucesso")
+            else:
+                self.leaveWithMessage("Impossivel remover o usuario "+schema+" finalizando...")
         logging.info("Todos os usuários foram removidos do banco!")
 
-    def runRemote(self,cmd):
-        """
-        Executa um comando no host Destino
-        :param cmd: comando a ser executado (list)
-        :return: Resultado do comando
-        """
-        result = ""
-        logging.debug("Método runRemote")
-        # 48 horas
-        #todo retornar resultados periódicos ao invés de um unico ao final.
-        s = pxssh.pxssh(timeout=172800, maxread=999999999)
-        logging.info("Iniciando conexão SSH")
-        if not s.login (self.config.ip, self.config.osuser, self.config.ospwd):
-            logging.error("Falha ao realizar conexão remota:")
-            logging.error("Credencias: ip:"+self.config.ip
-                          +" user:"+self.config.osuser+" senha:"+self.config.ospwd)
-            sys.exit(2)
-        else:
-            logging.info("Conexao realizada. Executando comando:"+cmd)
-            s.sendline (cmd)
-            s.prompt()         # match the prompt
-            # Gambi pra tirar o comando que eu chamei
-            result = '\n'.join(str(s.before).split('\n')[1::])
-            s.logout()
-        return result
+    def call_command(self,command):
+
+        process = subprocess.Popen(command.split(' '),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        return process.communicate()
 
     def leaveWithMessage(self,message):
         """
@@ -248,51 +213,29 @@ class LB2Refresh:
         logging.error("Finalizando o script...")
         sys.exit(2)
 
-    def checkOraVariables(self):
+    def checkOraVariables_v2(self):
         """
         Responsável por verificar se todas as variáveis necessárias
-        a importação estão OK!
+        a importação estão OK! Verificando as variáveis de ambinete
+        Tenha certeza que o ambiente contem todas as variaveis necessárias
 
         Caso aconteça algum erro o script termina
         :return: (bool) Se estiver tudo OK
         """
         logging.debug("Método checkOraVariables")
-        result = self.runRemote(". "+self.config.var_dir+";env")
+        command = "env"
+        result = self.call_command(command)
+        result = ''.join(result)
         if "-bash" in result:
             self.leaveWithMessage(result)
         if "ORACLE_HOME" not in result:
-            self.leaveWithMessage("ORACLE_HOME não foi setado. Verifique o arquivo:"
+            self.leaveWithMessage("ORACLE_HOME nao foi setado. Verifique o arquivo:"
                           +self.config.var_dir)
-        result = self.runRemote(". "+self.config.var_dir+";impdp help=y")
+        result = self.call_command("impdp help=y")
         if "-bash" in result:
             self.leaveWithMessage(result)
         logging.info("Tudo OK. Podemos iniciar a importação!")
         return True
-
-    def run_coleta_estatisticas(self):
-        """
-        Executa a coleta de estatisticas na base destino.
-        :return:
-        """
-        logging.debug("Método run_coleta_estatisticas")
-        logging.info("Abrindo arquivo coleta_estatisticas.sql")
-        with open('coleta_estatisticas.sql') as f:
-            sql = f.read()
-        con = self.estabConnection(self.config)
-        cur = con.cursor()
-        cur.callproc("dbms_output.enable")
-        res  = cur.execute(sql)
-        statusVar = cur.var(cx_Oracle.NUMBER)
-        lineVar = cur.var(cx_Oracle.STRING)
-        while True:
-            cur.callproc("dbms_output.get_line", (lineVar, statusVar))
-            if statusVar.getvalue() != 0:
-                break
-            logging.info(lineVar.getvalue())
-            logging.info(res)
-        if 'ORA-' in res:
-            self.leaveWithMessage("Erro na coleta de estatisticas")
-        logging.info("Coleta de estatisticas executada com sucesso!")
 
     def testBackup(self):
         """
@@ -307,69 +250,137 @@ class LB2Refresh:
                           +self.config.backup_file)
             return False
 
-    def checkProcs(self):
+    def test_conn(self):
+        """
+        Teste de conexão e credenciais
+        :return:
+        """
+        query = 'set head off \n' \
+                'select 1+1 from dual;'
+        result = self.run_sqlplus(query,True,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            return False
+        else:
+            return True
+
+    def run_coleta_estatisticas(self):
+        """
+        Executa a coleta de estatisticas na base destino.
+        :return:
+        """
+        logging.debug("Método run_coleta_estatisticas")
+        logging.info("Abrindo arquivo coleta_estatisticas_v2.sql")
+        with open('coleta_estatisticas_v2.sql') as f:
+            sql = f.read()
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            self.leaveWithMessage("Erros ao coletar as estatisticas!")
+        logging.info("Coleta de estatisticas executado com sucesso!")
+
+
+    def run_sqlplus(self, query, pretty, is_sysdba):
+        """
+        Executa um comando via sqlplus
+        :param credencias: Credenciais de logon  E.g: system/oracle@oradb
+        :param cmd: Query ou comando a ser executado
+        :param pretty Indica se o usuário quer o resultado com o regexp
+        :param Usuário é sysdba?
+        :return: stdout do sqlplus
+        """
+        credencias = self.config.user +'/'+ self.config.senha+'@'+self.config.sid
+        if is_sysdba:
+            credencias += ' as sysdba'
+        logging.debug('Método run_sqlplus')
+        logging.info('Abrindo conexao sqlplus com as credencias:'+credencias)
+        session = subprocess.Popen(['sqlplus','-S',credencias], stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info('Executando o comando:'+query)
+        session.stdin.write(query)
+        stdout, stderr = session.communicate()
+        if pretty:
+            r_unwanted = re.compile("[\n\t\r]")
+            stdout = r_unwanted.sub("", stdout)
+        if stderr != '':
+            logging.error(stdout)
+            logging.error(stderr)
+            self.leaveWithMessage('Falha ao executar o comando:'+query)
+        else:
+            return stdout
+
+    def checkProcs_v2(self):
         """
         Verifica se existe a procedure no banco.
         :return:
         """
-        sql = 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\''
-        con = self.estabConnection(self.config)
-        cur = con.cursor()
-        cur.execute(sql)
-        result = cur.fetchall()
-        if [result[0][0]] == ['VALID']:
+        query = 'set head off \n' \
+              'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
+        result = self.run_sqlplus(query, True, True)
+        if result == 'VALID':
             logging.info("Procedure LB2_REFRESH_CLEAN criada com sucesso!")
             return True
         logging.error("Procedure LB2_REFRESH_CLEAN inexistente no banco. Execute o modo --build novamente")
         logging.error(result)
         return False
 
-    def buildSchema(self):
+    def buildSchema_v2(self):
         """
         Constroí as funções necessárias para a aplicação
         :return:
         """
         logging.debug("Método buildSchema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        with open('lb2_refresh_clean.sql') as f:
+        with open('lb2_refresh_clean_v2.sql') as f:
             sql = f.read()
-        con = self.estabConnection(self.config)
-        if isinstance(con,bool):
-            sys.exit(2)
-        cur = con.cursor()
-        cur.execute(sql)
-        if self.checkProcs():
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if self.checkProcs_v2():
             print "Build realizado com sucesso!"
 
-    def runImport(self):
+    def run_pos_script(self,script):
+        """
+        Executa um script .sql passado como parametro
+        :return:
+        """
+        logging.debug("Método run_pos_script")
+        logging.info("Abrindo arquivo "+script)
+        with open(script) as f:
+            sql = f.read()
+        result = self.run_sqlplus(sql,False,True)
+        logging.info(result)
+        if 'ORA-' in result:
+            logging.error(result)
+            self.leaveWithMessage("Erro ao executar o script:"+script)
+        logging.info("Pos script executado com sucesso!")
+
+    def runImport_v2(self):
         """
         Roda o impdp de acordo com as especificações do Config File
         :rtype : object
         :return:
         """
-        cmd = "impdp \\""\""+self.config.user+"/"+self.config.senha+"@"+self.config.sid+" AS SYSDBA \\\" " \
+        logging.debug("Método runImport_v2")
+        cmd = "impdp '"+self.config.user+"/"+self.config.senha+"@"+self.config.sid+" AS SYSDBA' " \
         "directory="+self.config.directory+" dumpfile="+self.cappedFilePath(self.config.backup_file)+"" \
         " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
-        if hasattr(self.config, 'remap_tablespace'):
+	if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
         if hasattr(self.config, 'remap_schema'):
             cmd = cmd + " remap_schema="+self.config.remap_schema
-        r = self.runRemote(cmd)
+        err, r = self.call_command(cmd)
+        if err != "":
+            self.leaveWithMessage(err)
         logging.info("Resultado do Import")
         logging.info(r)
 
-    def recompile_objects(self):
-        """
-        Método que executa a procedure de recompilação dos objetos
-        do usuário.
-        :return:
-        """
+    def recompile_v2(self):
         logging.debug("Método recompile_objects")
-        cmd = 'echo exit | sqlplus '+self.config.user+'/'+self.config.senha+' as sysdba @$ORACLE_HOME/rdbms/admin/utlrp.sql'
         logging.info("Realizando a recompilação dos objetos...")
-        result = self.runRemote(cmd)
+        query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
+        result = self.run_sqlplus(query,False,True)
         logging.info(result)
 
     def cappedFilePath(self, file):
@@ -389,40 +400,46 @@ def testMode(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    if l.estabConnection(l.config):
-        print "Conexão OK!"
-        r = l.runRemote("echo -n teste")
-        if r == "teste":
-            print "Conexão SSH OK!"
-            if l.checkOraVariables():
+    if l.test_conn():
+        print "Conexão sqlplus OK!"
+        r,err = l.call_command('echo -n teste')
+        if r == "teste" and err == "":
+            print "Chamada ao bash OK!"
+            if l.checkOraVariables_v2():
                 print "Variáveis de Ambiente OK!"
             else:
                 print "Erro exportando as variáveis!"
         else:
-            print "Erro na conexão SSH"
+            print "Erro na chamada do bash"
     else:
-        print "Erro na conexão!"
+        print "Erro na conexão com o sqlplus!"
 
-def run(config,dont_clean,send_backup,coletar_estatisticas):
+def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
     :param dont_clean: Especifica se devo chamar o método cleanSchemas
     :param send_backup: Especifica se é necessário enviar o backup ao destino.
     :param coletar_estatisticas: Especifica se deve realizar coleta de estatisticas
+    :param pos_script: Script para ser executado após o script.
     :return: None
     """
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    # l.send_backup()
-    # if not dont_clean:
-    #       #Então limpe
-    #       l.cleanSchemas()
-    # l.runImport()
-    # l.recompile_objects()
+    if send_backup:
+      l.send_backup_v2()
+    if not dont_clean:
+         #Então limpe
+        l.cleanSchemas_v2()
+    l.runImport_v2()
+    l.recompile_v2()
     if coletar_estatisticas:
         l.run_coleta_estatisticas()
+    if pos_script != None:
+        l.run_pos_script(pos_script)
+
+
 
 def buildStuff(config):
     """
@@ -433,7 +450,7 @@ def buildStuff(config):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    l.buildSchema()
+    l.buildSchema_v2()
 
 def main():
     r = parse_args()
@@ -445,7 +462,6 @@ def main():
     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
-
     if r.is_testing:
         logging.info("Executando em modo --TEST")
         testMode(r.config)
@@ -454,7 +470,7 @@ def main():
         buildStuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config,r.dont_clean,r.send_backup,r.coletar_estatisticas)
+        run(r.config,r.dont_clean,r.send_backup,r.coletar_estatisticas,r.pos_script)
 
 # Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':

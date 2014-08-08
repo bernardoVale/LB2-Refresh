@@ -11,21 +11,6 @@ __copyright__ = 'LB2 Consultoria'
 from lb2Refresh import *
 import cx_Oracle
 
-class TestCommands(unittest.TestCase):
-
-    def setUp(self):
-        self.r = LB2Refresh()
-
-    def test_command(self):
-        """
-        Testa a execução de um comando simples via subprocess
-        :return:
-        """
-        output,_ = self.r.call_command('echo -n teste')
-        self.assertEqual('teste',output)
-
-        print _
-        print output
 
 class TestConfigFile(unittest.TestCase):
     """Testes Unitários referentes ao arquivo de configuração"""
@@ -102,30 +87,6 @@ class TestOracle(unittest.TestCase):
         mustByConnection = self.r.estabConnection(c)
         self.assertIsInstance(mustByConnection,cx_Oracle.Connection)
 
-    def test_procedure_is_valid(self):
-        """
-        Verifica se a procedure do LB2_REFRESH existe e está valida.
-        :return:
-        """
-        self.r.config.user = 'system'
-        query = 'set head off \n' \
-              'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
-        result = self.r.run_sqlplus(query,True,False)
-        self.assertEqual('VALID',result)
-
-    def test_compile(self):
-        """
-        Testa a recompilação de objetos
-        :return:
-        """
-        #Esse método so vai funcionar se estiver no Oracle server
-        #Esse método deve falhar!
-
-        self.r.config.user = 'sys'
-        query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
-        result = self.r.run_sqlplus(query,False,True)
-        self.assertEqual(result,'')
-
     def test_lb2refresh_clean(self):
         """
         Testa a função LB2-Refresh-Clean
@@ -188,4 +149,7 @@ class TestOracle(unittest.TestCase):
         con.close()
 
 if __name__ == '__main__':
+    import sys
+    config = sys.argv[1]
+    print config
     unittest.main()

@@ -13,10 +13,10 @@
         "ip" : "10.200.0.246",
         "osuser" : "oracle",
         "ospwd" : "oracle",
-        "backup_file" : "/backup/datapump/dpfull_20140801.dmp"
+        "backup_file" : "/backup/datapump/dpfull_20140805.dmp"
     },
-	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_20140801.dmp",
-	"logfile": "import_sales.log",
+	"backup_file": "/u01/app/oracle/backup/datapump/dpfull_20140805.dmp",
+	"logfile": "import_sales_20140805_v1.log",
 	"schemas": ["SALES"],
     "remap_tablespace" : "SALES_DATA:TSD_SISTEMA"
 }
