@@ -421,8 +421,8 @@ def run(config,dont_clean,send_backup,coletar_estatisticas):
     #       l.cleanSchemas()
     # l.runImport()
     # l.recompile_objects()
-    if coletar_estatisticas:
-        l.run_coleta_estatisticas()
+    # if coletar_estatisticas:
+    #     l.run_coleta_estatisticas()
 
 def buildStuff(config):
     """

@@ -136,7 +136,10 @@ class LB2Refresh:
         if self.fileExists(path):
             logging.info('Abrindo o json:'+str(path))
             with open(path) as opf:
-                self.config = json.load(opf)
+                try:
+                    self.config = json.load(opf)
+                except:
+                    self.leaveWithMessage("Erro ao ler arquivo JSON. Verifique o conteudo do arquivo")
         else:
             logging.error('Arquivo inexistente:'+str(path))
 
@@ -430,8 +433,8 @@ def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     if send_backup:
       l.send_backup_v2()
     if not dont_clean:
-         #Então limpe
-        l.cleanSchemas_v2()
+       #Então limpe
+      l.cleanSchemas_v2()
     l.runImport_v2()
     l.recompile_v2()
     if coletar_estatisticas:
