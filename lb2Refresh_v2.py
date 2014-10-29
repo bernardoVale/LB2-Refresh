@@ -103,10 +103,11 @@ class Config:
                     self.rem_ospwd = config['remetente']['ospwd']
                     self.rem_backup_file = config['remetente']['backup_file']
                 # Variáveis opcionais
-                if dict(config).has_key('remap_tablespace'):
-                    self.remap_tablespace = config['remap_tablespace']
-                if dict(config).has_key('remap_schema'):
-                    self.remap_schema = config['remap_schema']
+                if dict(config).has_key('datapump_options'):
+                    if dict(config)['datapump_options'].has_key('remap_tablespace'):
+                        self.remap_tablespace = config['datapump_options']['remap_tablespace']
+                    if dict(config)['datapump_options'].has_key('remap_schema'):
+                        self.remap_schema = config['datapump_options']['remap_schema']
             except:
                 logging.error("Falha ao ler um dos parametros."
                               " Verifique o JSON de configuração")
