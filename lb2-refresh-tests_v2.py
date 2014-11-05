@@ -15,6 +15,34 @@ class TestCommands(unittest.TestCase):
     def setUp(self):
         self.r = LB2Refresh()
 
+    def test_restart(self):
+        self.assertTrue(self.r.restart_database(3))
+
+    def test_restartdatabase(self):
+        log = "SQL> shutdown abort; \
+        ORACLE instance shut down. \
+        SQL> startupORA-32004: obsolete or deprecated parameter(s) specified for RDBMS instance \
+                ORACLE instance started. \
+                \
+        Total System Global Area 1068937216 bytes \
+        Fixed Size		    2260088 bytes \
+        Variable Size		  813695880 bytes \
+        Database Buffers	  247463936 bytes \
+        Redo Buffers		    5517312 bytes \
+        Database mounted. \
+        Database opened."
+        log_error_1 = "ORA-27154: post/wait create failed \
+ORA-27300: OS system dependent operation:semids_per_proc failed with status: 0 \
+ORA-27301: OS failure message: Error 0 \
+ORA-27302: failure occurred at: sskgpwcr2 \
+ORA-27303: additional information: semids = 524, maxprocs = 100000"
+        log_error_2 = "SQL> shutdown abort; \
+        ORACLE instance shut down. \
+        SQL> startupORA-32004: Could not open database."
+        self.assertTrue(self.r.restarted_successful(log))
+        self.assertFalse(self.r.restarted_successful(log_error_1))
+        self.assertFalse(self.r.restarted_successful(log_error_2))
+
     def test_command(self):
         """
         Testa a execução de um comando simples via subprocess
@@ -48,8 +76,8 @@ class TestConfigFile(unittest.TestCase):
     def test_backupExists(self):
         '''Testa a propriedade backup_file do arquivo JSON'''
 
-        self.assertEqual(self.r.config['backup_file'], '/backup/datapump/dpfull_20140805.dmp')
-        self.assertEqual(self.r.fileExists(self.r.config['backup_file']), True)
+        self.assertEqual(self.r.config['backup_file'], '/u01/app/oracle/backup/dpfull_20141105.dmp')
+        self.assertEqual(self.r.fileExists(self.r.config['backup_file']), False)
 
     def test_truncate_file_dir(self):
         """

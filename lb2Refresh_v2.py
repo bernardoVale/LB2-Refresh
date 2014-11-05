@@ -35,6 +35,7 @@ def parse_args():
     parser.add_argument('--config', required=True, action='store',
                         dest='config',
                         help='Arquivo de configuração, obrigatório para o funcionamento do software.')
+
     #Default é o local do script
     parser.add_argument('--log', action='store',default=os.getcwd(),
                         dest='log_dir',
@@ -173,15 +174,51 @@ class LB2Refresh:
         x = lambda y: True if os.path.isfile(y) and os.access(y, os.R_OK) else False
         return x(path)
 
+    def restarted_successful(self,log):
+        """
+        Verifica se o banco foi reiniciado com sucesso
+        :param log: Log do sqlplus
+        :return: bool
+        """
+        is_up = lambda x: True if 'Database opened.' in x or 'aberto.' in x else False
+        if is_up(log):
+                logging.info("Banco reiniciado. Prosseguindo!")
+                return True
+        logging.info("Impossivel reiniciar o banco de dados!")
+        return False
+
+    def restart_database(self,retry_count):
+        """
+        Reinicia o banco de dados. Caso falha tenta de novo ate o limite do retry_count
+        :param retry_count: Caso falhe, quantas vezes ainda posso tentar
+        :return:
+        """
+        shutdown_query = "shutdown abort; \n" \
+                    "startup; \n"
+        logging.debug("Método restart_database")
+        while(retry_count>0):
+            logging.info("Parando o banco de dados...")
+            r = self.run_sqlplus(shutdown_query,False,True)
+            logging.info(r)
+            if self.restarted_successful(r):
+                retry_count = 0
+                return True
+            else:
+                logging.info("Falha ao reiniciar, tentando novamente...")
+                retry_count = retry_count - 1
+        return False
+
     def cleanSchemas_v2(self):
         """
         Irá remover todos os schemas do banco de dados
         Com base utilizando os nomes contidos na lista de schemas
         :return:
         """
-        logging.debug("Método cleanSchemas")
-        logging.info("Iniciando limpeza...")
+        RETRY_COUNT = 3
         x = lambda y: True if 'Resultado:0:' in y else False
+        if not self.restart_database(RETRY_COUNT):
+            self.leaveWithMessage("Impossivel reiniciar o banco de dados apos "
+                                  ""+RETRY_COUNT+" tentativa(s). Contacte o DBA.")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario "+schema)
             sql = "set serveroutput on; \n" \
@@ -436,12 +473,12 @@ def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     if not dont_clean:
        #Então limpe
       l.cleanSchemas_v2()
-    l.runImport_v2()
-    l.recompile_v2()
-    if coletar_estatisticas:
-        l.run_coleta_estatisticas()
-    if pos_script != None:
-        l.run_pos_script(pos_script)
+    #l.runImport_v2()
+    #l.recompile_v2()
+    #if coletar_estatisticas:
+    #    l.run_coleta_estatisticas()
+    #if pos_script != None:
+    #    l.run_pos_script(pos_script)
 
 
 

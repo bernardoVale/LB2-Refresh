@@ -1,0 +1,18 @@
+{
+    "backup_file": "/u01/app/oracle/backup/dpfull_20141105.dmp", 
+    "destino": {
+        "directory": "DATAPUMP", 
+        "ip": "129.0.0.31", 
+        "ospwd": "oracle", 
+        "osuser": "oracle", 
+        "senha": "oracle", 
+        "sid": "oradb", 
+        "user": "sys", 
+        "var_dir": "/home/oracle/.bash_profile"
+    }, 
+    "logfile": "import_20141105.log", 
+    "schemas": [
+        "TASY", 
+        "TASY_VERSAO"
+    ]
+}
