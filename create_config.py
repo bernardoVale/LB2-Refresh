@@ -13,6 +13,7 @@ import os
 import re
 import datetime
 import sys
+import socket
 
 __author__ = 'bernardovale'
 
@@ -236,8 +237,9 @@ def main():
                     ,'/u01/app/oracle/backup/dpfull_'+datetime.datetime.now().strftime("%Y%m%d")+'.dmp')
     destino_dict['sid'] = build_question('SID do banco de dados que será atualizado. Default(oradb):'
                                          , TEXT, 'oradb')
-    destino_dict['ip'] = build_question('IP do banco de dados que será atualizado. Default(127.0.0.1):'
-                                         , IP, '127.0.0.1')
+    destino_dict['ip'] = build_question('IP do banco de dados que será atualizado. '
+                                        'Default('+socket.gethostbyname(socket.gethostname())+'):'
+                                         , IP, socket.gethostbyname(socket.gethostname()))
     destino_dict['osuser'] = build_question('Usuário do Sistema operacional do banco de dados que será atualizado.'
                                             ' Default(oracle):'
                                          , TEXT, 'oracle')
