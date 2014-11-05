@@ -1,5 +1,5 @@
 {
-    "backup_file": "/u01/app/oracle/backup/dpfull_20141105.dmp", 
+    "backup_file": "/u01/app/oracle/backup/dpfull_$DATA.dmp",
     "destino": {
         "directory": "DATAPUMP", 
         "ip": "129.0.0.31", 
@@ -10,7 +10,7 @@
         "user": "sys", 
         "var_dir": "/home/oracle/.bash_profile"
     }, 
-    "logfile": "import_20141105.log", 
+    "logfile": "import_$DATA.log",
     "schemas": [
         "TASY", 
         "TASY_VERSAO"

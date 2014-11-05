@@ -82,6 +82,10 @@ class Config:
     """
         Objeto de Configuração do LB2-Refresh
     """
+    #DECLARAÇÃO DAS ANNOTATIONS
+    DATA = "$DATA"
+    annotations_dict = {DATA : datetime.datetime.now().strftime("%Y%m%d") }
+
     def __init__(self,config=None):
         #Necessário pois as vezes chamo esse método sem passar um dict
         if isinstance(config,dict):
@@ -92,8 +96,8 @@ class Config:
                 self.user = config['destino']['user']
                 self.senha = config['destino']['senha']
                 self.directory = config['destino']['directory']
-                self.backup_file = config['backup_file']
-                self.logfile = config['logfile']
+                self.backup_file = self.parse_annotations(config['backup_file'])
+                self.logfile = self.parse_annotations(config['logfile'])
                 self.schemas = config['schemas']
                 self.osuser = config['destino']['osuser']
                 self.ospwd = config['destino']['ospwd']
@@ -102,7 +106,7 @@ class Config:
                     self.rem_ip = config['remetente']['ip']
                     self.rem_osuser = config['remetente']['osuser']
                     self.rem_ospwd = config['remetente']['ospwd']
-                    self.rem_backup_file = config['remetente']['backup_file']
+                    self.rem_backup_file = self.parse_annotations(config['remetente']['backup_file'])
                 # Variáveis opcionais
                 if dict(config).has_key('datapump_options'):
                     if dict(config)['datapump_options'].has_key('remap_tablespace'):
@@ -114,6 +118,17 @@ class Config:
                               " Verifique o JSON de configuração")
                 sys.exit(2)
 
+    def parse_annotations(self,text):
+        """
+        Verifica se a variavel possui alguma annotation conhecida
+        Caso tenha, substitui pelo valor da annotation
+        :param text: Valor da variavel
+        :return: Variavel com as substituicoes dos annotations
+        """
+        for annoatition in self.annotations_dict.keys():
+            if annoatition in text:
+                text = str(text).replace(annoatition,self.annotations_dict[annoatition])
+        return text
 
 class LB2Refresh:
 
@@ -468,17 +483,17 @@ def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    if send_backup:
-      l.send_backup_v2()
-    if not dont_clean:
-       #Então limpe
-      l.cleanSchemas_v2()
-    l.runImport_v2()
-    l.recompile_v2()
-    if coletar_estatisticas:
-        l.run_coleta_estatisticas()
-    if pos_script != None:
-        l.run_pos_script(pos_script)
+    # if send_backup:
+    #   l.send_backup_v2()
+    # if not dont_clean:
+    #    #Então limpe
+    #   l.cleanSchemas_v2()
+    # l.runImport_v2()
+    # l.recompile_v2()
+    # if coletar_estatisticas:
+    #     l.run_coleta_estatisticas()
+    # if pos_script != None:
+    #     l.run_pos_script(pos_script)
 
 
 
