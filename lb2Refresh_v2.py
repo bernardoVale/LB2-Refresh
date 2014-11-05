@@ -218,7 +218,7 @@ class LB2Refresh:
         x = lambda y: True if 'Resultado:0:' in y else False
         if not self.restart_database(RETRY_COUNT):
             self.leaveWithMessage("Impossivel reiniciar o banco de dados apos "
-                                  ""+RETRY_COUNT+" tentativa(s). Contacte o DBA.")
+                                  ""+str(RETRY_COUNT)+" tentativa(s). Contacte o DBA.")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario "+schema)
             sql = "set serveroutput on; \n" \
@@ -473,12 +473,12 @@ def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     if not dont_clean:
        #Então limpe
       l.cleanSchemas_v2()
-    #l.runImport_v2()
-    #l.recompile_v2()
-    #if coletar_estatisticas:
-    #    l.run_coleta_estatisticas()
-    #if pos_script != None:
-    #    l.run_pos_script(pos_script)
+    l.runImport_v2()
+    l.recompile_v2()
+    if coletar_estatisticas:
+        l.run_coleta_estatisticas()
+    if pos_script != None:
+        l.run_pos_script(pos_script)
 
 
 
