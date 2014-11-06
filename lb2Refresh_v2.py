@@ -37,6 +37,11 @@ def parse_args():
                         dest='config',
                         help='Arquivo de configuração, obrigatório para o funcionamento do software.')
 
+    #Default é DEBUG
+    parser.add_argument('--loglevel', action='store',default='DEBUG',
+                        dest='loglevel',
+                        help='Level de log do script. Pode ser DEBUG,INFO, WARNING ou ERROR.\n'
+                             'Default: DEBUG')
     #Default é o local do script
     parser.add_argument('--log', action='store',default=os.getcwd(),
                         dest='log_dir',
@@ -77,6 +82,19 @@ def parse_args():
     if i > 1:
         print "Os parametros --build ou --test não podem ser utilizados juntos"
         sys.exit(2)
+    #todo melhorar essa logica barriguda
+    if not any(p.loglevel in s for s in ['DEBUG','ERROR','WARNING','INFO']):
+        print "LOGLEVEL deve ser um dos seguites: DEBUG,ERROR,WARNING ou INFO "
+        sys.exit(2)
+    else:
+        if p.loglevel == 'DEBUG':
+            p.loglevel = logging.DEBUG
+        elif p.loglevel == 'ERROR':
+            p.loglevel = logging.ERROR
+        elif p.loglevel == 'WARNING':
+            p.loglevel = logging.WARNING
+        elif p.loglevel == 'INFO':
+            p.loglevel = logging.INFO
     return p
 
 class Config:
@@ -143,6 +161,24 @@ class LB2Refresh:
         """
         with open('status.txt','w') as status_file:
             status_file.write(mensagem)
+
+    def imported_successful(self,log):
+        """
+        Verifica se o datapump conseguiu importar com sucesso
+        analizando o log do impdp
+        :param log: Log do impdp
+        :return: bool
+        """
+        #Abrindo lista de erros fatais
+        logging.debug('Método imported_successful')
+        with open('import_fatal_errors.txt', 'r') as error:
+            error_list = error.read().split('\n')
+        #Varrendo a lista para verificar se existe algum erro fatal
+        for error in error_list:
+            if error in log:
+                logging.info('Erro fatal encontrado na importação')
+                return False
+        return True
 
     def buildConfig(self):
         """
@@ -431,13 +467,15 @@ class LB2Refresh:
         " logfile="+self.config.logfile+" schemas=" \
         +','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
-	if hasattr(self.config, 'remap_tablespace'):
+        if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace="+self.config.remap_tablespace
         if hasattr(self.config, 'remap_schema'):
             cmd = cmd + " remap_schema="+self.config.remap_schema
         err, r = self.call_command(cmd)
         if err != "":
             self.leaveWithMessage(err)
+        if not self.imported_successful(r):
+            self.leaveWithMessage(r)
         logging.info("Resultado do Import")
         logging.info(r)
 
@@ -531,7 +569,7 @@ def main():
     #todo Suporte ao windows! Tirar a /
     filename = r.log_dir +'/'+ 'LB2Refresh_'+datetime.datetime.now().strftime("%Y%m%d%H%M")+'.log'
     logging.basicConfig(filename=filename
-                            ,level=logging.DEBUG,
+                            ,level=r.loglevel,
     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar

@@ -10,16 +10,34 @@ __copyright__ = 'LB2 Consultoria'
 
 from lb2Refresh_v2 import *
 
+
 class TestCommands(unittest.TestCase):
+
+    def fileToString(self,file):
+        with open(file,'r') as f:
+            string = f.read()
+        return string
 
     def setUp(self):
         self.r = LB2Refresh()
 
+    def test_imported_successful(self):
+        #Exemplares de sucesso
+        self.assertTrue(
+        self.r.imported_successful(self.fileToString('tests/impdp_sucess01.txt')))
+        self.assertTrue(
+        self.r.imported_successful(self.fileToString('tests/impdp_sucess02.txt')))
+        # IMPDP Com erros fatais
+        self.assertFalse(
+        self.r.imported_successful(self.fileToString('tests/impdp_failure01.txt')))
+        self.assertFalse(
+        self.r.imported_successful(self.fileToString('tests/impdp_failure02.txt')))
+        self.assertFalse(
+        self.r.imported_successful(self.fileToString('tests/impdp_failure03.txt')))
+
     def test_refresh_status(self):
         self.r.refresh_status('oi')
-        with open('status.txt') as status:
-            result = status.read()
-            self.assertEquals(result,'oi')
+        self.assertEquals(self.fileToString('status.txt'),'oi')
 
     def test_restart(self):
         self.assertTrue(self.r.restart_database(3))
