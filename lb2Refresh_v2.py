@@ -3,6 +3,7 @@
 import argparse
 import subprocess
 import re
+from time import sleep
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -134,6 +135,14 @@ class LB2Refresh:
 
     def __init__(self):
         self.config = ''
+
+    def refresh_status(self,mensagem):
+        """
+        Atualiza o status do meu arquivo de estado da atualização
+        :return:
+        """
+        with open('status.txt','w') as status_file:
+            status_file.write(mensagem)
 
     def buildConfig(self):
         """
@@ -483,17 +492,25 @@ def run(config,dont_clean,send_backup,coletar_estatisticas,pos_script):
     l = LB2Refresh()
     l.readConfig(config)
     l.buildConfig()
-    # if send_backup:
-    #   l.send_backup_v2()
-    # if not dont_clean:
-    #    #Então limpe
-    #   l.cleanSchemas_v2()
-    # l.runImport_v2()
-    # l.recompile_v2()
-    # if coletar_estatisticas:
-    #     l.run_coleta_estatisticas()
-    # if pos_script != None:
-    #     l.run_pos_script(pos_script)
+    if send_backup:
+        l.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+        l.send_backup_v2()
+    if not dont_clean:
+        #Então limpe
+        l.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
+        l.cleanSchemas_v2()
+    l.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
+    l.runImport_v2()
+    l.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
+    l.recompile_v2()
+    if coletar_estatisticas:
+        l.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
+        l.run_coleta_estatisticas()
+    if pos_script != None:
+        l.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
+        l.run_pos_script(pos_script)
+    l.refresh_status("LB2 REFRESH FINALIZADO!")
+
 
 
 

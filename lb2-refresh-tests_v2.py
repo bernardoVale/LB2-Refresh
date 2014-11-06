@@ -15,6 +15,12 @@ class TestCommands(unittest.TestCase):
     def setUp(self):
         self.r = LB2Refresh()
 
+    def test_refresh_status(self):
+        self.r.refresh_status('oi')
+        with open('status.txt') as status:
+            result = status.read()
+            self.assertEquals(result,'oi')
+
     def test_restart(self):
         self.assertTrue(self.r.restart_database(3))
 
