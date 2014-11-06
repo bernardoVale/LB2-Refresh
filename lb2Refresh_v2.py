@@ -176,7 +176,7 @@ class LB2Refresh:
         #Varrendo a lista para verificar se existe algum erro fatal
         for error in error_list:
             if error in log:
-                logging.info('Erro fatal encontrado na importação')
+                logging.error('Erro fatal encontrado na importação. Erro encontrado:' + error)
                 return False
         return True
 

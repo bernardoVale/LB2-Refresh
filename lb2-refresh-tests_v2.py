@@ -34,6 +34,10 @@ class TestCommands(unittest.TestCase):
         self.r.imported_successful(self.fileToString('tests/impdp_failure02.txt')))
         self.assertFalse(
         self.r.imported_successful(self.fileToString('tests/impdp_failure03.txt')))
+        self.assertFalse(
+        self.r.imported_successful(self.fileToString('tests/impdp_failure04.txt')))
+        self.assertFalse(
+        self.r.imported_successful(self.fileToString('tests/impdp_failure05.txt')))
 
     def test_refresh_status(self):
         self.r.refresh_status('oi')
