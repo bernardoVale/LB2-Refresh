@@ -1,5 +1,5 @@
-# !/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python
+#-*- coding: utf-8 -*-
 import argparse
 from utils.lb2refresh_config import Config
 from utils.lb2refresh_utils import RefreshUtils
@@ -110,7 +110,7 @@ class LB2Refresh:
         """
         # Abrindo lista de erros fatais
         logging.debug('Método imported_successful')
-        with open('import_fatal_errors.txt', 'r') as error:
+        with open('../utils/import_fatal_errors.txt', 'r') as error:
             error_list = error.read().split('\n')
         # Varrendo a lista para verificar se existe algum erro fatal
         for error in error_list:
@@ -270,8 +270,8 @@ class LB2Refresh:
         :return:
         """
         logging.debug("Método run_coleta_estatisticas")
-        logging.info("Abrindo arquivo coleta_estatisticas_v2.sql")
-        with open('coleta_estatisticas_v2.sql') as f:
+        logging.info("Abrindo arquivo coleta_estatisticas.sql")
+        with open('sqls/coleta_estatisticas.sql') as f:
             sql = f.read()
         result = self.run_query(sql, False)
         logging.info(result)
@@ -313,7 +313,7 @@ class LB2Refresh:
         """
         logging.debug("Método build_schema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        with open('lb2_refresh_clean_v2.sql') as f:
+        with open('sqls/lb2_refresh_clean.sql') as f:
             sql = f.read()
         result = self.run_query(sql, False)
         logging.info(result)

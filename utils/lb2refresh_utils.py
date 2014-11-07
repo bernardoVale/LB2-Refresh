@@ -20,7 +20,7 @@ class RefreshUtils:
         :return: None
         """
         logging.debug("Método refresh_status")
-        with open('status.txt', 'w') as status_file:
+        with open('../status.txt', 'w') as status_file:
             status_file.write(mensagem)
 
     @staticmethod

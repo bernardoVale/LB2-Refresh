@@ -1,4 +1,4 @@
-set serverout on;
+set serveroutput on;
 BEGIN
   dbms_output.put_line('INICIO - '||systimestamp||' - Coleta de estatisticas!');
    FOR SCHEM IN (SELECT USERNAME FROM DBA_USERS WHERE ACCOUNT_STATUS='OPEN' AND USERNAME NOT IN
