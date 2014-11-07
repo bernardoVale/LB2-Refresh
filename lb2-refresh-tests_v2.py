@@ -36,15 +36,10 @@ class TestCommands(unittest.TestCase):
         self.r.imported_successful(self.fileToString('tests/impdp_failure03.txt')))
         self.assertFalse(
         self.r.imported_successful(self.fileToString('tests/impdp_failure04.txt')))
-        self.assertFalse(
-        self.r.imported_successful(self.fileToString('tests/impdp_failure05.txt')))
 
     def test_refresh_status(self):
         self.r.refresh_status('oi')
         self.assertEquals(self.fileToString('status.txt'),'oi')
-
-    def test_restart(self):
-        self.assertTrue(self.r.restart_database(3))
 
     def test_restartdatabase(self):
         log = "SQL> shutdown abort; \
@@ -67,9 +62,10 @@ ORA-27303: additional information: semids = 524, maxprocs = 100000"
         log_error_2 = "SQL> shutdown abort; \
         ORACLE instance shut down. \
         SQL> startupORA-32004: Could not open database."
-        self.assertTrue(self.r.restarted_successful(log))
-        self.assertFalse(self.r.restarted_successful(log_error_1))
-        self.assertFalse(self.r.restarted_successful(log_error_2))
+        self.assertTrue(LB2Refresh.restarted_successful(log))
+        self.assertTrue(LB2Refresh.restarted_successful(log))
+        self.assertFalse(LB2Refresh.restarted_successful(log_error_1))
+        self.assertFalse(LB2Refresh.restarted_successful(log_error_2))
 
     def test_command(self):
         """
@@ -87,13 +83,13 @@ class TestConfigFile(unittest.TestCase):
 
     def setUp(self):
         self.r = LB2Refresh()
-        self.r.readConfig('config.json')
+        self.r.read_config('config.json')
 
     def test_fileExists(self):
         """ Testa se os arquivos existem """
 
-        cfg = self.r.fileExists('config.json')
-        cfg2 = self.r.fileExists('arquivoinexistente.txt')
+        cfg = LB2Refresh.file_exists('config.json')
+        cfg2 = LB2Refresh.file_exists('arquivoinexistente.txt')
         self.assertEqual(cfg, True)
         self.assertEqual(cfg2, False)
 
@@ -104,8 +100,8 @@ class TestConfigFile(unittest.TestCase):
     def test_backupExists(self):
         '''Testa a propriedade backup_file do arquivo JSON'''
 
-        self.assertEqual(self.r.config['backup_file'], '/u01/app/oracle/backup/dpfull_20141105.dmp')
-        self.assertEqual(self.r.fileExists(self.r.config['backup_file']), False)
+        self.assertEqual(self.r.config['backup_file'], '/u01/app/oracle/backup/dpfull_$DATA.dmp')
+        self.assertEqual(self.r.file_exists(self.r.config['backup_file']), False)
 
     def test_truncate_file_dir(self):
         """
@@ -113,8 +109,8 @@ class TestConfigFile(unittest.TestCase):
         exemplo: /home/oracle/teste.log deve tornar teste.log com esse método
         :return:
         """
-        file = self.r.cappedFilePath('/u01/app/oracle/backup/datapump/teste.dmp')
-        file2 = self.r.cappedFilePath('teste.dmp')
+        file = self.r.capped_file_path('/u01/app/oracle/backup/datapump/teste.dmp')
+        file2 = self.r.capped_file_path('teste.dmp')
         self.assertEqual(file,'teste.dmp')
         self.assertEqual(file2,'teste.dmp')
 
@@ -125,8 +121,8 @@ class TestOracle(unittest.TestCase):
     def setUp(self):
         self.r = LB2Refresh()
         self.conn = ""
-        self.r.readConfig('config.json')
-        self.r.buildConfig()
+        self.r.read_config('config.json')
+        self.r.build_config()
 
     def test_procedure_is_valid(self):
         """
@@ -190,7 +186,7 @@ class TestOracle(unittest.TestCase):
          Verifica as variáveis de ambiente.
          :return:
          """
-         isOk = self.r.checkOraVariables_v2()
+         isOk = self.r.check_ora_variables()
          self.assertEqual(isOk,True)
 
     def test_hasRefresh_clean(self):

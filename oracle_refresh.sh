@@ -22,10 +22,8 @@ start() {
         echo "ERRO - A atualizacao ja foi iniciada, aguarde o final (pid: $pid)"
 	    echo "Caso seja necessario, finalize o atualizacao no menu de suporte"
     else
-        echo "Iniciando LB2-Refresh"
-	    $LB2REFRESH_HOME/lb2Refresh_v2.py --config config.json --sendbackup --coletar --posscript $LB2REFRESH_HOME/pos_import.sql --log $LB2REFRESH_HOME &
+	    $LB2REFRESH_HOME/lb2Refresh_v2.py --config config.json --sendbackup --coletar --posscript $LB2REFRESH_HOME/pos_import.sql --log $LB2REFRESH_HOME  >> /dev/null 2>&1 &
     fi
-    return 0
 }
 status(){
     pid=$(lb2refresh_pid)
@@ -50,7 +48,6 @@ status(){
             echo "Nenhuma atualizacao em Andamento - ERROR"
         fi
     fi
-    return 0
 }
 stop() {
     pid=$(lb2refresh_pid)
@@ -94,7 +91,6 @@ stop() {
         	echo "Nenhuma atualizacao em andamento!"
     	fi
     fi
-    return 0
 }
 
 case $1 in
@@ -108,5 +104,3 @@ case $1 in
        status
 	    ;;
 esac
-
-exit 0
