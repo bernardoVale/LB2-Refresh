@@ -1,8 +1,6 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 import argparse
-import subprocess
-import re
 from utils.lb2refresh_config import Config
 from utils.lb2refresh_utils import RefreshUtils
 
@@ -129,6 +127,7 @@ class LB2Refresh:
         logging.debug('Método build_config')
         self.config = Config(self.config)
 
+    #todo Não é possível removê-lo devido a necessidade do self.config
     def read_config(self, path):
         """
         Realiza a leitura do JSON e adiciona a variavel config.
@@ -173,7 +172,7 @@ class LB2Refresh:
         logging.debug("Método restart_database")
         while retry_count > 0:
             logging.info("Parando o banco de dados...")
-            r = self.run_sqlplus(shutdown_query, False, True)
+            r = self.run_query(shutdown_query, False)
             logging.info(r)
             if RefreshUtils.restarted_successful(r):
                 return True
@@ -204,7 +203,7 @@ class LB2Refresh:
                                                         "dbms_output.put_line('Resultado:' || r); \n" \
                                                         "end; \n" \
                                                         "/"
-            r = self.run_sqlplus(sql, True, True)
+            r = self.run_query(sql, True)
             logging.info(r)
             if x(r):
                 logging.info("Usuario " + schema + " removido com sucesso")
@@ -258,7 +257,7 @@ class LB2Refresh:
         logging.debug("Método test_conn")
         query = 'set head off \n' \
                 'select 1+1 from dual;'
-        result = self.run_sqlplus(query, True, True)
+        result = self.run_query(query, True)
         logging.info(result)
         if 'ORA-' in result:
             return False
@@ -274,39 +273,22 @@ class LB2Refresh:
         logging.info("Abrindo arquivo coleta_estatisticas_v2.sql")
         with open('coleta_estatisticas_v2.sql') as f:
             sql = f.read()
-        result = self.run_sqlplus(sql, False, True)
+        result = self.run_query(sql, False)
         logging.info(result)
         if 'ORA-' in result:
             RefreshUtils.leave_with_message("Erros ao coletar as estatisticas!")
         logging.info("Coleta de estatisticas executado com sucesso!")
 
-    def run_sqlplus(self, query, pretty, is_sysdba):
+    def run_query(self, query, pretty):
         """
         Executa um comando via sqlplus
         :param query: Query ou comando a ser executado
         :param pretty: Indica se o usuário quer o resultado com o regexp
-        :param is_sysdba: Usuário é sysdba?
         :return:stdout do sqlplus
         """
-        logging.debug("Método run_sqlplus")
+        logging.debug("Método run_query")
         credencias = self.config.user + '/' + self.config.senha + '@' + self.config.sid
-        if is_sysdba:
-            credencias += ' as sysdba'
-        logging.info('Abrindo conexao sqlplus com as credencias:' + credencias)
-        session = subprocess.Popen(['sqlplus', '-S', credencias], stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info('Executando o comando:' + query)
-        session.stdin.write(query)
-        stdout, stderr = session.communicate()
-        if pretty:
-            r_unwanted = re.compile("[\n\t\r]")
-            stdout = r_unwanted.sub("", stdout)
-        if stderr != '':
-            logging.error(stdout)
-            logging.error(stderr)
-            RefreshUtils.leave_with_message('Falha ao executar o comando:' + query)
-        else:
-            return stdout
+        return RefreshUtils.run_sqlplus(credencias, query, pretty, True)
 
     def check_procs(self):
         """
@@ -316,7 +298,7 @@ class LB2Refresh:
         logging.debug("Método check_procs")
         query = 'set head off \n' \
                 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
-        result = self.run_sqlplus(query, True, True)
+        result = self.run_query(query, True)
         if result == 'VALID':
             logging.info("Procedure LB2_REFRESH_CLEAN criada com sucesso!")
             return True
@@ -333,7 +315,7 @@ class LB2Refresh:
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
         with open('lb2_refresh_clean_v2.sql') as f:
             sql = f.read()
-        result = self.run_sqlplus(sql, False, True)
+        result = self.run_query(sql, False)
         logging.info(result)
         if self.check_procs():
             print "Build realizado com sucesso!"
@@ -347,7 +329,7 @@ class LB2Refresh:
         logging.info("Abrindo arquivo " + script)
         with open(script) as f:
             sql = f.read()
-        result = self.run_sqlplus(sql, False, True)
+        result = self.run_query(sql, False)
         logging.info(result)
         if 'ORA-' in result:
             logging.error(result)
@@ -384,7 +366,7 @@ class LB2Refresh:
         logging.debug("Método recompile")
         logging.info("Realizando a recompilação dos objetos...")
         query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
-        result = self.run_sqlplus(query, False, True)
+        result = self.run_query(query, False)
         logging.info(result)
 
 

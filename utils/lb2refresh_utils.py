@@ -1,14 +1,15 @@
 # coding=utf-8
+import json
 import logging
 import os
 import subprocess
+import re
 
 
 __author__ = 'bernardovale'
 
 
 class RefreshUtils:
-
     def __init__(self):
         pass
 
@@ -79,3 +80,31 @@ class RefreshUtils:
          """
         logging.debug("Método capped_file_path")
         return os.path.basename(my_file)
+
+    @staticmethod
+    def run_sqlplus(credencias, query, pretty, is_sysdba):
+        """
+        Executa um comando via sqlplus
+        :param query: Query ou comando a ser executado
+        :param pretty: Indica se o usuário quer o resultado com o regexp
+        :param is_sysdba: Usuário é sysdba?
+        :return:stdout do sqlplus
+        """
+        logging.debug("Método run_query")
+        if is_sysdba:
+            credencias += ' as sysdba'
+        logging.info('Abrindo conexao sqlplus com as credencias:' + credencias)
+        session = subprocess.Popen(['sqlplus', '-S', credencias], stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info('Executando o comando:' + query)
+        session.stdin.write(query)
+        stdout, stderr = session.communicate()
+        if pretty:
+            r_unwanted = re.compile("[\n\t\r]")
+            stdout = r_unwanted.sub("", stdout)
+        if stderr != '':
+            logging.error(stdout)
+            logging.error(stderr)
+            RefreshUtils.leave_with_message('Falha ao executar o comando:' + query)
+        else:
+            return stdout

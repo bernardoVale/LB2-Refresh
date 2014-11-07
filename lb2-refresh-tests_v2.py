@@ -129,7 +129,7 @@ class TestOracle(unittest.TestCase):
         self.r.config.user = 'system'
         query = 'set head off \n' \
               'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\';'
-        result = self.r.run_sqlplus(query,True,False)
+        result = self.r.run_query(query,True)
         self.assertEqual('VALID',result)
 
     def test_compile(self):
@@ -142,7 +142,7 @@ class TestOracle(unittest.TestCase):
 
         self.r.config.user = 'sys'
         query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
-        result = self.r.run_sqlplus(query,False,True)
+        result = self.r.run_query(query,False)
         self.assertEqual(result,'')
 
     def test_lb2refresh_clean_v2(self):
@@ -153,7 +153,7 @@ class TestOracle(unittest.TestCase):
         x = lambda y: True if 'Resultado:0:' in y else False
         sql = "create user capa identified by capudo;"
         schema = "CAPA"
-        r = self.r.run_sqlplus(sql,False,True)
+        r = self.r.run_query(sql,False)
         print r
         sql = "set serveroutput on; \n" \
               "declare \n" \
@@ -163,7 +163,7 @@ class TestOracle(unittest.TestCase):
               "dbms_output.put_line('Resultado:' || r); \n" \
               "end; \n" \
               "/"
-        r = self.r.run_sqlplus(sql,True,True)
+        r = self.r.run_query(sql,True)
         print r
         self.assertEqual(x(r),True)
         sql = "set serveroutput on; \n" \
@@ -174,7 +174,7 @@ class TestOracle(unittest.TestCase):
               "dbms_output.put_line('Resultado:' || r); \n" \
               "end; \n" \
               "/"
-        r = self.r.run_sqlplus(sql,False,True)
+        r = self.r.run_query(sql,False)
         print r
         self.assertEqual(x(r),False)
 
