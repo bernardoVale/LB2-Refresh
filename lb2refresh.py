@@ -3,6 +3,8 @@
 import argparse
 import subprocess
 import re
+from utils.lb2refresh_config import Config
+from utils.lb2refresh_utils import RefreshUtils
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -96,74 +98,9 @@ def parse_args():
     return p
 
 
-class Config:
-    """
-        Objeto de Configuração do LB2-Refresh
-    """
-    # DECLARAÇÃO DAS ANNOTATIONS
-    DATA = "$DATA"
-    annotations_dict = {DATA: datetime.datetime.now().strftime("%Y%m%d")}
-
-    def __init__(self, config=None):
-        # Necessário pois as vezes chamo esse método sem passar um dict
-        if isinstance(config, dict):
-            # Esses parametros entram no try pois são obrigatórios.
-            logging.debug("Método __init__ Config")
-            try:
-                self.sid = config['destino']['sid']
-                self.ip = config['destino']['ip']
-                self.user = config['destino']['user']
-                self.senha = config['destino']['senha']
-                self.directory = config['destino']['directory']
-                self.backup_file = self.parse_annotations(config['backup_file'])
-                self.logfile = self.parse_annotations(config['logfile'])
-                self.schemas = config['schemas']
-                self.osuser = config['destino']['osuser']
-                self.ospwd = config['destino']['ospwd']
-                self.var_dir = config['destino']['var_dir']
-                if 'remetente' in config:
-                    self.rem_ip = config['remetente']['ip']
-                    self.rem_osuser = config['remetente']['osuser']
-                    self.rem_ospwd = config['remetente']['ospwd']
-                    self.rem_backup_file = self.parse_annotations(config['remetente']['backup_file'])
-                # Variáveis opcionais
-                if 'datapump_options' in config:
-                    if 'remap_tablespace' in config['datapump_options']:
-                        self.remap_tablespace = config['datapump_options']['remap_tablespace']
-                    if 'remap_schema' in config['datapump_options']:
-                        self.remap_schema = config['datapump_options']['remap_schema']
-            except (KeyError, NameError):
-                logging.error("Falha ao ler um dos parametros."
-                              " Verifique o JSON de configuração")
-                exit(2)
-
-    def parse_annotations(self, text):
-        """
-        Verifica se a variavel possui alguma annotation conhecida
-        Caso tenha, substitui pelo valor da annotation
-        :param text: Valor da variavel
-        :return: Variavel com as substituicoes dos annotations
-        """
-        logging.debug("Método parse_annotations")
-        for annoatition in self.annotations_dict.keys():
-            if annoatition in text:
-                text = str(text).replace(annoatition, self.annotations_dict[annoatition])
-        return text
-
-
 class LB2Refresh:
     def __init__(self):
         self.config = ''
-
-    @staticmethod
-    def refresh_status(mensagem):
-        """
-        Atualiza o status do meu arquivo de estado da atualização
-        :return:
-        """
-        logging.debug("Método refresh_status")
-        with open('status.txt', 'w') as status_file:
-            status_file.write(mensagem)
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -199,13 +136,13 @@ class LB2Refresh:
         :return: None
         """
         logging.debug('Método read_config')
-        if self.file_exists(path):
+        if RefreshUtils.file_exists(path):
             logging.info('Abrindo o json:' + str(path))
             with open(path) as opf:
                 try:
                     self.config = json.load(opf)
                 except ValueError:
-                    self.leave_with_message("Erro ao ler arquivo JSON. Verifique o conteudo do arquivo")
+                    RefreshUtils.leave_with_message("Erro ao ler arquivo JSON. Verifique o conteudo do arquivo")
         else:
             logging.error('Arquivo inexistente:' + str(path))
 
@@ -220,38 +157,10 @@ class LB2Refresh:
         cmd = 'scp ' + self.config.rem_osuser + '@' + self.config.rem_ip \
               + ':' + self.config.rem_backup_file + ' ' + self.config.backup_file
         print cmd
-        r, err = self.call_command(cmd)
+        r, err = RefreshUtils.call_command(cmd)
         if err != "":
-            self.leave_with_message(err)
+            RefreshUtils.leave_with_message(err)
         logging.info("Backup enviado com sucesso!")
-
-    @staticmethod
-    def file_exists(path):
-        """
-        Garante que o arquivo existe no SO
-        :param path: Path do arquivo
-        :return: Afirmação
-        """
-        logging.debug('Método file_exists')
-        logging.info('Verificando se existe o arquivo:' + path)
-        # Agora tambem sei brincar de lambda
-        x = lambda y: True if os.path.isfile(y) and os.access(y, os.R_OK) else False
-        return x(path)
-
-    @staticmethod
-    def restarted_successful(log):
-        """
-        Verifica se o banco foi reiniciado com sucesso
-        :param log: Log do sqlplus
-        :return: bool
-        """
-        logging.debug("Método restarted_successful")
-        is_up = lambda x: True if 'Database opened.' in x or 'aberto.' in x else False
-        if is_up(log):
-            logging.info("Banco reiniciado. Prosseguindo!")
-            return True
-        logging.error("Impossivel reiniciar o banco de dados!")
-        return False
 
     def restart_database(self, retry_count):
         """
@@ -266,7 +175,7 @@ class LB2Refresh:
             logging.info("Parando o banco de dados...")
             r = self.run_sqlplus(shutdown_query, False, True)
             logging.info(r)
-            if self.restarted_successful(r):
+            if RefreshUtils.restarted_successful(r):
                 return True
             else:
                 logging.info("Falha ao reiniciar, tentando novamente...")
@@ -283,8 +192,8 @@ class LB2Refresh:
         retry_count = 3
         x = lambda y: True if 'Resultado:0:' in y else False
         if not self.restart_database(retry_count):
-            self.leave_with_message("Impossivel reiniciar o banco de dados apos "
-                                    "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
+            RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
+                                            "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario " + schema)
             sql = "set serveroutput on; \n" \
@@ -300,28 +209,8 @@ class LB2Refresh:
             if x(r):
                 logging.info("Usuario " + schema + " removido com sucesso")
             else:
-                self.leave_with_message("Impossivel remover o usuario " + schema + " finalizando...")
+                RefreshUtils.leave_with_message("Impossivel remover o usuario " + schema + " finalizando...")
         logging.info("Todos os usuários foram removidos do banco!")
-
-    @staticmethod
-    def call_command(command):
-        logging.debug("Método call_command")
-        process = subprocess.Popen(command.split(' '),
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        return process.communicate()
-
-    @staticmethod
-    def leave_with_message(message):
-        """
-        Método padronizado para finalizar o script
-        :param message: Mensagem final
-        :return: None
-        """
-        logging.debug("Método leave_with_message")
-        logging.error(message)
-        logging.error("Finalizando o script...")
-        exit(2)
 
     def check_ora_variables(self):
         """
@@ -334,16 +223,16 @@ class LB2Refresh:
         """
         logging.debug("Método check_ora_variables")
         command = "env"
-        result = self.call_command(command)
+        result = RefreshUtils.call_command(command)
         result = ''.join(result)
         if "-bash" in result:
-            self.leave_with_message(result)
+            RefreshUtils.leave_with_message(result)
         if "ORACLE_HOME" not in result:
-            self.leave_with_message("ORACLE_HOME nao foi setado. Verifique o arquivo:"
-                                    + self.config.var_dir)
-        result = self.call_command("impdp help=y")
+            RefreshUtils.leave_with_message("ORACLE_HOME nao foi setado. Verifique o arquivo:"
+                                            + self.config.var_dir)
+        result = RefreshUtils.call_command("impdp help=y")
         if "-bash" in result:
-            self.leave_with_message(result)
+            RefreshUtils.leave_with_message(result)
         logging.info("Tudo OK. Podemos iniciar a importação!")
         return True
 
@@ -353,7 +242,7 @@ class LB2Refresh:
         :return: bool
         """
         logging.debug("Método test_backup")
-        if self.file_exists(self.config.backup_file):
+        if RefreshUtils.file_exists(self.config.backup_file):
             logging.info("Backup existe!")
             return True
         else:
@@ -388,7 +277,7 @@ class LB2Refresh:
         result = self.run_sqlplus(sql, False, True)
         logging.info(result)
         if 'ORA-' in result:
-            self.leave_with_message("Erros ao coletar as estatisticas!")
+            RefreshUtils.leave_with_message("Erros ao coletar as estatisticas!")
         logging.info("Coleta de estatisticas executado com sucesso!")
 
     def run_sqlplus(self, query, pretty, is_sysdba):
@@ -415,7 +304,7 @@ class LB2Refresh:
         if stderr != '':
             logging.error(stdout)
             logging.error(stderr)
-            self.leave_with_message('Falha ao executar o comando:' + query)
+            RefreshUtils.leave_with_message('Falha ao executar o comando:' + query)
         else:
             return stdout
 
@@ -462,7 +351,7 @@ class LB2Refresh:
         logging.info(result)
         if 'ORA-' in result:
             logging.error(result)
-            self.leave_with_message("Erro ao executar o script:" + script)
+            RefreshUtils.leave_with_message("Erro ao executar o script:" + script)
         logging.info("Pos script executado com sucesso!")
 
     def run_import(self):
@@ -475,19 +364,19 @@ class LB2Refresh:
         cmd = "impdp '" + self.config.user + "/" + self.config.senha \
               + "@" + self.config.sid + " AS SYSDBA' " \
                                         "directory=" + self.config.directory + " dumpfile=" \
-              + self.capped_file_path(self.config.backup_file) + "" \
-                                                                 " logfile=" + self.config.logfile + " schemas=" \
+              + RefreshUtils.capped_file_path(self.config.backup_file) + "" \
+                                                                     " logfile=" + self.config.logfile + " schemas=" \
               + ','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
             cmd = cmd + " remap_tablespace=" + self.config.remap_tablespace
         if hasattr(self.config, 'remap_schema'):
             cmd = cmd + " remap_schema=" + self.config.remap_schema
-        err, r = self.call_command(cmd)
+        err, r = RefreshUtils.call_command(cmd)
         if err != "":
-            self.leave_with_message(err)
+            RefreshUtils.leave_with_message(err)
         if not self.imported_successful(r):
-            self.leave_with_message(r)
+            RefreshUtils.leave_with_message(r)
         logging.info("Resultado do Import")
         logging.info(r)
 
@@ -497,16 +386,6 @@ class LB2Refresh:
         query = '@$ORACLE_HOME/rdbms/admin/utlrp.sql'
         result = self.run_sqlplus(query, False, True)
         logging.info(result)
-
-    @staticmethod
-    def capped_file_path(my_file):
-        """
-            Método para extrair o nome do arquivo tendo o caminho completo como parametro
-            :param my_file Nome completo do arquivo
-            :return: file
-         """
-        logging.debug("Método capped_file_path")
-        return os.path.basename(my_file)
 
 
 def test_mode(config):
@@ -521,7 +400,7 @@ def test_mode(config):
     l.build_config()
     if l.test_conn():
         print "Conexão sqlplus OK!"
-        r, err = l.call_command('echo -n teste')
+        r, err = RefreshUtils.call_command('echo -n teste')
         if r == "teste" and err == "":
             print "Chamada ao bash OK!"
             if l.check_ora_variables():
@@ -546,27 +425,27 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     """
     logging.debug("Método run")
     l = LB2Refresh()
-    l.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
+    RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
     if send_backup:
-        l.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
         l.send_backup()
     if not dont_clean:
         # Então limpe
-        l.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
+        RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
         l.clean_schemas()
-    l.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
+    RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
     l.run_import()
-    l.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
+    RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
     l.recompile()
     if coletar_estatisticas:
-        l.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
         l.run_coleta_estatisticas()
     if pos_script is not None:
-        l.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
+        RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
         l.run_pos_script(pos_script)
-    l.refresh_status("LB2 REFRESH FINALIZADO!")
+    RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
 
 
 def build_stuff(config):

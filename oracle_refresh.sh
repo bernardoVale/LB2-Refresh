@@ -22,7 +22,7 @@ start() {
         echo "ERRO - A atualizacao ja foi iniciada, aguarde o final (pid: $pid)"
 	    echo "Caso seja necessario, finalize o atualizacao no menu de suporte"
     else
-	    $LB2REFRESH_HOME/lb2Refresh_v2.py --config config.json --sendbackup --coletar --posscript $LB2REFRESH_HOME/pos_import.sql --log $LB2REFRESH_HOME  >> /dev/null 2>&1 &
+	    ${LB2REFRESH_HOME}/lb2Refresh_v2.py --config config.json --sendbackup --coletar --posscript ${LB2REFRESH_HOME}/pos_import.sql --log ${LB2REFRESH_HOME}  >> /dev/null 2>&1 &
     fi
 }
 status(){
@@ -54,11 +54,11 @@ stop() {
     if [ -n "$pid" ]
     then
         echo "Parando o LB2 Refresh..."
-	kill $pid
+	kill ${pid}
         let kwait=$SHUTDOWN_WAIT
         count=0
         count_by=5
-        until [ `ps -p $pid | grep -c $pid` = '0' ] || [ $count -gt $kwait ]
+        until [ `ps -p ${pid} | grep -c ${pid}` = '0' ] || [ ${count} -gt ${kwait} ]
         do
             echo "Aguardando o fim do processo. Timeout para remover a forca o pid: ${count}/${kwait}"
             sleep $count_by
@@ -77,15 +77,15 @@ stop() {
             let kwait=$SHUTDOWN_WAIT
             count=0
             count_by=5
-            until [ `ps -p $pid | grep -c $pid` = '0' ] || [ $count -gt $kwait ]
+            until [ `ps -p ${pid} | grep -c ${pid}` = '0' ] || [ $count -gt $kwait ]
     	    do
         	    echo "Aguardando o fim do processo. Timeout para remover a forca o pid: ${count}/${kwait}"
         	    sleep $count_by
         	    let count=$count+$count_by;
     	    done
-    	    if [ $count -gt $kwait ]; then
+    	    if [ ${count} -gt ${kwait} ]; then
         	    echo "Matando o processo que nao parou apos $SHUTDOWN_WAIT segundos"
-        	    kill -9 $pid
+        	    kill -9 ${pid}
     	    fi
 	    else
         	echo "Nenhuma atualizacao em andamento!"

@@ -1,14 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from pprint import pprint
-from subprocess import PIPE, Popen
 import unittest
-import re
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
 
-from lb2Refresh_v2 import *
+from lb2refresh import *
 
 
 class TestCommands(unittest.TestCase):
@@ -38,7 +35,7 @@ class TestCommands(unittest.TestCase):
         self.r.imported_successful(self.fileToString('tests/impdp_failure04.txt')))
 
     def test_refresh_status(self):
-        self.r.refresh_status('oi')
+        RefreshUtils.refresh_status('oi')
         self.assertEquals(self.fileToString('status.txt'),'oi')
 
     def test_restartdatabase(self):
@@ -62,17 +59,17 @@ ORA-27303: additional information: semids = 524, maxprocs = 100000"
         log_error_2 = "SQL> shutdown abort; \
         ORACLE instance shut down. \
         SQL> startupORA-32004: Could not open database."
-        self.assertTrue(LB2Refresh.restarted_successful(log))
-        self.assertTrue(LB2Refresh.restarted_successful(log))
-        self.assertFalse(LB2Refresh.restarted_successful(log_error_1))
-        self.assertFalse(LB2Refresh.restarted_successful(log_error_2))
+        self.assertTrue(RefreshUtils.restarted_successful(log))
+        self.assertTrue(RefreshUtils.restarted_successful(log))
+        self.assertFalse(RefreshUtils.restarted_successful(log_error_1))
+        self.assertFalse(RefreshUtils.restarted_successful(log_error_2))
 
     def test_command(self):
         """
         Testa a execução de um comando simples via subprocess
         :return:
         """
-        output,err = self.r.call_command('echo -n teste')
+        output,err = RefreshUtils.call_command('echo -n teste')
         self.assertEqual('teste',output)
 
         print err
@@ -88,8 +85,8 @@ class TestConfigFile(unittest.TestCase):
     def test_fileExists(self):
         """ Testa se os arquivos existem """
 
-        cfg = LB2Refresh.file_exists('config.json')
-        cfg2 = LB2Refresh.file_exists('arquivoinexistente.txt')
+        cfg = RefreshUtils.file_exists('config.json')
+        cfg2 = RefreshUtils.file_exists('arquivoinexistente.txt')
         self.assertEqual(cfg, True)
         self.assertEqual(cfg2, False)
 
@@ -101,7 +98,7 @@ class TestConfigFile(unittest.TestCase):
         '''Testa a propriedade backup_file do arquivo JSON'''
 
         self.assertEqual(self.r.config['backup_file'], '/u01/app/oracle/backup/dpfull_$DATA.dmp')
-        self.assertEqual(self.r.file_exists(self.r.config['backup_file']), False)
+        self.assertEqual(RefreshUtils.file_exists(self.r.config['backup_file']), False)
 
     def test_truncate_file_dir(self):
         """
@@ -109,8 +106,8 @@ class TestConfigFile(unittest.TestCase):
         exemplo: /home/oracle/teste.log deve tornar teste.log com esse método
         :return:
         """
-        file = self.r.capped_file_path('/u01/app/oracle/backup/datapump/teste.dmp')
-        file2 = self.r.capped_file_path('teste.dmp')
+        file = RefreshUtils.capped_file_path('/u01/app/oracle/backup/datapump/teste.dmp')
+        file2 = RefreshUtils.capped_file_path('teste.dmp')
         self.assertEqual(file,'teste.dmp')
         self.assertEqual(file2,'teste.dmp')
 
@@ -189,26 +186,26 @@ class TestOracle(unittest.TestCase):
          isOk = self.r.check_ora_variables()
          self.assertEqual(isOk,True)
 
-    def test_hasRefresh_clean(self):
-        """
-        Verifica se a procedure lb2_refresh_clean.sql existe no banco!
-        :return:
-        """
-        c = Config()
-        c.senha = 'oracle'
-        c.sid = 'oradb'
-        c.user = 'sys'
-        c.ip = "10.200.0.204"
-        sql = 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\''
-        print sql
-        con = self.r.estabConnection(c)
-        cur = con.cursor()
-        cur.execute(sql)
-        result = cur.fetchall()
-        self.assertNotEqual(result,[])
-        self.assertEqual([result[0][0]],['VALID'])
-        cur.close()
-        con.close()
+    # def test_hasRefresh_clean(self):
+    #     """
+    #     Verifica se a procedure lb2_refresh_clean.sql existe no banco!
+    #     :return:
+    #     """
+    #     c = Config()
+    #     c.senha = 'oracle'
+    #     c.sid = 'oradb'
+    #     c.user = 'sys'
+    #     c.ip = "10.200.0.204"
+    #     sql = 'select status from dba_objects where object_name=\'LB2_REFRESH_CLEAN\''
+    #     print sql
+    #     con = self.r.estabConnection(c)
+    #     cur = con.cursor()
+    #     cur.execute(sql)
+    #     result = cur.fetchall()
+    #     self.assertNotEqual(result,[])
+    #     self.assertEqual([result[0][0]],['VALID'])
+    #     cur.close()
+    #     con.close()
 
 if __name__ == '__main__':
     unittest.main()
