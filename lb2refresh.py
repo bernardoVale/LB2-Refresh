@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
 import argparse
+import pkgutil
 from utils.lb2refresh_config import Config
 from utils.lb2refresh_utils import RefreshUtils
 
@@ -110,8 +111,7 @@ class LB2Refresh:
         """
         # Abrindo lista de erros fatais
         logging.debug('Método imported_successful')
-        with open('../utils/import_fatal_errors.txt', 'r') as error:
-            error_list = error.read().split('\n')
+        error_list = pkgutil.get_data("utils", "import_fatal_errors.txt").split('\n')
         # Varrendo a lista para verificar se existe algum erro fatal
         for error in error_list:
             if error in log:
@@ -271,8 +271,7 @@ class LB2Refresh:
         """
         logging.debug("Método run_coleta_estatisticas")
         logging.info("Abrindo arquivo coleta_estatisticas.sql")
-        with open('sqls/coleta_estatisticas.sql') as f:
-            sql = f.read()
+        sql = pkgutil.get_data('sqls', 'coleta_estatisticas.sql')
         result = self.run_query(sql, False)
         logging.info(result)
         if 'ORA-' in result:
@@ -313,8 +312,7 @@ class LB2Refresh:
         """
         logging.debug("Método build_schema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        with open('sqls/lb2_refresh_clean.sql') as f:
-            sql = f.read()
+        sql = pkgutil.get_data('sqls', 'coleta_estatisticas.sql')
         result = self.run_query(sql, False)
         logging.info(result)
         if self.check_procs():

@@ -1,6 +1,8 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
+import pkgutil
 import unittest
+import sys
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -17,7 +19,6 @@ class TestCommands(unittest.TestCase):
 
     def setUp(self):
         self.r = LB2Refresh()
-
     def test_imported_successful(self):
         #Exemplares de sucesso
         #/Users/bernardovale/PycharmProjects/LB2-Refresh/unit_test/utils-tests.py
