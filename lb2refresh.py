@@ -68,10 +68,9 @@ def parse_args():
                              'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.\n'
                              'NECESSÁRIO FAZER A TROCA DE CHAVES DO SSH')
 
-    parser.add_argument('--version', action='version', version='%(prog)s v2.0',
+    parser.add_argument('--version', action='version', version='%(prog)s v1.1',
                         help='Exibe a versão atual do sistema.')
     p = parser.parse_args()
-    # todo pesquisar suporte do argparse para parametros que não podem ser utilizados juntos
     # pe de macaco
     i = 0
     if p.is_building:
@@ -81,7 +80,6 @@ def parse_args():
     if i > 1:
         print "Os parametros --build ou --test não podem ser utilizados juntos"
         exit(2)
-    # todo melhorar essa logica barriguda
     if not any(p.loglevel in s for s in ['DEBUG', 'ERROR', 'WARNING', 'INFO']):
         print "LOGLEVEL deve ser um dos seguites: DEBUG,ERROR,WARNING ou INFO "
         exit(2)
@@ -127,7 +125,6 @@ class LB2Refresh:
         logging.debug('Método build_config')
         self.config = Config(self.config)
 
-    #todo Não é possível removê-lo devido a necessidade do self.config
     def read_config(self, path):
         """
         Realiza a leitura do JSON e adiciona a variavel config.
@@ -345,7 +342,7 @@ class LB2Refresh:
               + "@" + self.config.sid + " AS SYSDBA' " \
                                         "directory=" + self.config.directory + " dumpfile=" \
               + RefreshUtils.capped_file_path(self.config.backup_file) + "" \
-                                                                     " logfile=" + self.config.logfile + " schemas=" \
+                                                                         " logfile=" + self.config.logfile + " schemas=" \
               + ','.join(list(self.config.schemas))
         # # Adição de parametros opicionais
         if hasattr(self.config, 'remap_tablespace'):
@@ -444,11 +441,9 @@ def build_stuff(config):
 def main():
     r = parse_args()
     # Configuração do Log
-    # todo Suporte ao windows! Tirar a /
     filename = r.log_dir + '/' + 'LB2Refresh_' + datetime.datetime.now().strftime("%Y%m%d%H%M") + '.log'
-    logging.basicConfig(filename=filename
-                        , level=r.loglevel,
-                        format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
+    logging.basicConfig(filename=filename, level=r.loglevel,
+                         format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
     if r.is_testing:
