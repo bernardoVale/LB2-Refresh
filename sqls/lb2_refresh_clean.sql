@@ -16,6 +16,7 @@ begin
           || ',' || r.serial# || '''';
   END LOOP;
   while (is_dead = 1) loop
+    DBMS_OUTPUT.PUT_LINE('LB2-Refresh:Clean: Verificando se as conexões foram removidas para o usuário '||p_user);
     select count(*) INTO w_user_count from v$session where username = p_user;
     --Não existe nenhuma conexão, posso prosseguir.
     IF w_user_count = 0 then
