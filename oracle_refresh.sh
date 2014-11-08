@@ -22,7 +22,7 @@ start() {
         echo "ERRO - A atualizacao ja foi iniciada, aguarde o final (pid: $pid)"
 	    echo "Caso seja necessario, finalize o atualizacao no menu de suporte"
     else
-	    ${LB2REFRESH_HOME}/lb2Refresh_v2.py --config config.json --sendbackup --coletar --posscript ${LB2REFRESH_HOME}/pos_import.sql --log ${LB2REFRESH_HOME}  >> /dev/null 2>&1 &
+	    ${LB2REFRESH_HOME}/lb2refresh.py --config config.json --sendbackup --coletar --posscript ${LB2REFRESH_HOME}/pos_import.sql --log ${LB2REFRESH_HOME}  >> /dev/null 2>&1 &
     fi
 }
 status(){
