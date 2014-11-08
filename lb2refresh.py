@@ -1,5 +1,15 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
+#-------------------------------------------------------------
+#                   LB2 Refresh
+#
+#       Autor: Bernardo S E Vale
+#       Data Inicio:  16/06/2014
+#       Data Release: 07/11/2014
+#       email: bernardo.vale@lb2.com.br
+#       Versão: v1.1
+#       LB2 Consultoria - Leading Business 2 the Next Level!
+#-------------------------------------------------------------
 import argparse
 import pkgutil
 from utils.lb2refresh_config import Config
