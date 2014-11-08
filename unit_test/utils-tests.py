@@ -38,7 +38,7 @@ class TestCommands(unittest.TestCase):
 
     def test_refresh_status(self):
         RefreshUtils.refresh_status('oi')
-        self.assertEquals(self.fileToString('../status.txt'), 'oi')
+        self.assertEquals(self.fileToString('status.txt'), 'oi')
 
     def test_restartdatabase(self):
         log = "SQL> shutdown abort; \
