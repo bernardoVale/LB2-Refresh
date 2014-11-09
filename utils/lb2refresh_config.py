@@ -42,9 +42,9 @@ class Config:
                         self.remap_tablespace = config['datapump_options']['remap_tablespace']
                     if 'remap_schema' in config['datapump_options']:
                         self.remap_schema = config['datapump_options']['remap_schema']
-            except (KeyError, NameError):
+            except (KeyError, NameError) as e:
                 logging.error("Falha ao ler um dos parametros."
-                              " Verifique o JSON de configuração")
+                              " Verifique o JSON de configuração: Param: %s", e)
                 exit(2)
 
     def parse_annotations(self, text):

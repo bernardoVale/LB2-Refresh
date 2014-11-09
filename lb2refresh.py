@@ -7,13 +7,14 @@
 #       Data Inicio:  16/06/2014
 #       Data Release: 07/11/2014
 #       email: bernardo.vale@lb2.com.br
-#       Versão: v1.1
+#       Versão: v1.2
 #       LB2 Consultoria - Leading Business 2 the Next Level!
 #-------------------------------------------------------------
 import argparse
 import pkgutil
 from utils.lb2refresh_config import Config
 from utils.lb2refresh_utils import RefreshUtils
+from utils.refresh_sshutils import run_remote
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -78,7 +79,7 @@ def parse_args():
                              'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.\n'
                              'NECESSÁRIO FAZER A TROCA DE CHAVES DO SSH')
 
-    parser.add_argument('--version', action='version', version='%(prog)s v1.1',
+    parser.add_argument('--version', action='version', version='%(prog)s v1.2',
                         help='Exibe a versão atual do sistema.')
     p = parser.parse_args()
     # pe de macaco
@@ -108,6 +109,20 @@ def parse_args():
 class LB2Refresh:
     def __init__(self):
         self.config = ''
+
+    def run_backup(self):
+        """
+        Teste de inicio do expdp remoto.
+        :return:
+        """
+        #cmd = ". /home/oracle/.bash_profile;expdp system/oracle@pdbsp as sysdba\'"
+        cmd = ". "+self.config.var_dir+";expdp system/" + self.config.senha \
+              + "@" + self.config.sid + " directory=" + self.config.directory + " full=y dumpfile=" \
+              + RefreshUtils.capped_file_path(self.config.backup_file) + "" \
+                                                                         " logfile=" + self.config.logfile
+        print cmd
+        r_list = run_remote(cmd=cmd, ip='10.200.0.120', username='oracle', password='oracle')
+        for r in r_list: print r
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -415,24 +430,25 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
-    if send_backup:
-        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
-        l.send_backup()
-    if not dont_clean:
-        # Então limpe
-        RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
-        l.clean_schemas()
-    RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
-    l.run_import()
-    RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
-    l.recompile()
-    if coletar_estatisticas:
-        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
-        l.run_coleta_estatisticas()
-    if pos_script is not None:
-        RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
-        l.run_pos_script(pos_script)
-    RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
+    l.run_backup()
+    # if send_backup:
+    #     RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+    #     l.send_backup()
+    # if not dont_clean:
+    #     # Então limpe
+    #     RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
+    #     l.clean_schemas()
+    # RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
+    # l.run_import()
+    # RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
+    # l.recompile()
+    # if coletar_estatisticas:
+    #     RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
+    #     l.run_coleta_estatisticas()
+    # if pos_script is not None:
+    #     RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
+    #     l.run_pos_script(pos_script)
+    # RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
 
 
 def build_stuff(config):

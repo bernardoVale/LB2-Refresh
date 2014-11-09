@@ -15,6 +15,15 @@ class RefreshUtils:
         pass
 
     @staticmethod
+    def run_remote_cmd(cmd, credenciais):
+        HOST="root/alsk1029QWE#@10.200.0.114"
+        output = ''
+        command = 'ls -l'
+        #run_remote(cmd=command, ip='10.200.0.114',username='root', password='alsk1029QWE#')
+        # ssh = SSH(ip='10.200.0.114', password='coco', username='root')
+        # ssh.connect()
+
+    @staticmethod
     def refresh_status(mensagem):
         """
         Atualiza o status do meu arquivo de estado da atualização

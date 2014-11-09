@@ -19,6 +19,14 @@ class TestCommands(unittest.TestCase):
 
     def setUp(self):
         self.r = LB2Refresh()
+
+    def test_run_backup(self):
+        # self.r.read_config('config.json')
+        # self.r.build_config()
+        # print self.r.run_backup()
+        list = RefreshUtils.run_remote_cmd('ls -l /home','d')
+
+
     def test_imported_successful(self):
         #Exemplares de sucesso
         #/Users/bernardovale/PycharmProjects/LB2-Refresh/unit_test/utils-tests.py
