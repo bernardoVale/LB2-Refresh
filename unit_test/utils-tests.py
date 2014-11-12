@@ -24,6 +24,7 @@ class TestCommands(unittest.TestCase):
         # self.r.read_config('config.json')
         # self.r.build_config()
         # print self.r.run_backup()
+        RefreshUtils.call_command('ssh 10.200.0.213 hostname -i')
         list = RefreshUtils.run_remote_cmd('ls -l /home','d')
 
 
@@ -121,3 +122,13 @@ class TestConfigFile(unittest.TestCase):
         file2 = RefreshUtils.capped_file_path('teste.dmp')
         self.assertEqual(file, 'teste.dmp')
         self.assertEqual(file2, 'teste.dmp')
+
+    def test_rementente_bkp_option(self):
+        self.r.read_config('config_withbkp.json')
+        self.r.build_config()
+        self.assertEquals('oracle', self.r.config.rem_senha)
+        self.assertEquals('sys', self.r.config.rem_user)
+        self.assertEquals('DATAPUMP', self.r.config.rem_directory)
+        self.assertEquals('/home/oracle/.bash_profile', self.r.config.rem_var_dir)
+        self.assertEquals('lb2app', self.r.config.rem_sid)
+

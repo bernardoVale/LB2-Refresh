@@ -1,5 +1,5 @@
-#!/usr/bin/python
-#-*- coding: utf-8 -*-
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------
 #                   LB2 Refresh
 #
@@ -14,7 +14,6 @@ import argparse
 import pkgutil
 from utils.lb2refresh_config import Config
 from utils.lb2refresh_utils import RefreshUtils
-from utils.refresh_sshutils import run_remote
 
 __author__ = 'Bernardo Vale'
 __copyright__ = 'LB2 Consultoria'
@@ -115,14 +114,16 @@ class LB2Refresh:
         Teste de inicio do expdp remoto.
         :return:
         """
-        #cmd = ". /home/oracle/.bash_profile;expdp system/oracle@pdbsp as sysdba\'"
-        cmd = ". "+self.config.var_dir+";expdp system/" + self.config.senha \
-              + "@" + self.config.sid + " directory=" + self.config.directory + " full=y dumpfile=" \
-              + RefreshUtils.capped_file_path(self.config.backup_file) + "" \
-                                                                         " logfile=" + self.config.logfile
-        print cmd
-        r_list = run_remote(cmd=cmd, ip='10.200.0.120', username='oracle', password='oracle')
-        for r in r_list: print r
+        cmd = "ssh " + self.config.rem_ip + " /bin/bash << EOF \n" \
+                                            ". " + self.config.rem_var_dir + "; \nexpdp system/" + self.config.rem_senha \
+              + "@" + self.config.rem_sid + " directory=" + self.config.rem_directory + " full=y dumpfile=" \
+              + RefreshUtils.capped_file_path(self.config.rem_backup_file) + "" \
+                                                                             " logfile=export_" \
+              + datetime.datetime.now().strftime("%Y%m%d") + ".log \n" \
+                                                             "EOF"
+        r_list = RefreshUtils.call_command(cmd)
+        for r in r_list:
+            print r
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -430,25 +431,26 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
+    RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
     l.run_backup()
-    # if send_backup:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
-    #     l.send_backup()
-    # if not dont_clean:
-    #     # Então limpe
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
-    #     l.clean_schemas()
-    # RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
-    # l.run_import()
-    # RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
-    # l.recompile()
-    # if coletar_estatisticas:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
-    #     l.run_coleta_estatisticas()
-    # if pos_script is not None:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
-    #     l.run_pos_script(pos_script)
-    # RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
+    if send_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+        l.send_backup()
+    if not dont_clean:
+        # Então limpe
+        RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
+        l.clean_schemas()
+    RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
+    l.run_import()
+    RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
+    l.recompile()
+    if coletar_estatisticas:
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
+        l.run_coleta_estatisticas()
+    if pos_script is not None:
+        RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
+        l.run_pos_script(pos_script)
+    RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
 
 
 def build_stuff(config):
@@ -469,7 +471,7 @@ def main():
     # Configuração do Log
     filename = r.log_dir + '/' + 'LB2Refresh_' + datetime.datetime.now().strftime("%Y%m%d%H%M") + '.log'
     logging.basicConfig(filename=filename, level=r.loglevel,
-                         format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
+                        format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
     if r.is_testing:
