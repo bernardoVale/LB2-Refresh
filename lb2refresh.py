@@ -1,6 +1,6 @@
-# !/usr/bin/python
-# -*- coding: utf-8 -*-
-#-------------------------------------------------------------
+#!/usr/bin/python
+#-*- coding: utf-8 -*-
+# -------------------------------------------------------------
 #                   LB2 Refresh
 #
 #       Autor: Bernardo S E Vale
@@ -69,6 +69,12 @@ def parse_args():
                         help='Realiza a coleta de estatisticas após a importação.\n Verificar o arquivo:'
                              ' coleta_estatisticas.sql')
 
+    parser.add_argument('--withbackup', action='store_true', default=False,
+                        dest='with_backup',
+                        help='Realiza um backup no remetente e o utiliza como base para importação. \n'
+                             'OBS: Utilize o create_config.py para gerar as informações necessárias para o backup \n'
+                             'OBS_2: Utilizando esta opção o --sendbackup torna-se implícito')
+
     parser.add_argument('--sendbackup', action='store_true', default=False,
                         dest='send_backup',
                         help='Envia o .dmp para o servidor destino antes da importação. \n'
@@ -109,21 +115,16 @@ class LB2Refresh:
     def __init__(self):
         self.config = ''
 
+
     def run_backup(self):
         """
         Teste de inicio do expdp remoto.
         :return:
         """
-        cmd = "ssh " + self.config.rem_ip + " /bin/bash << EOF \n" \
-                                            ". " + self.config.rem_var_dir + "; \nexpdp system/" + self.config.rem_senha \
-              + "@" + self.config.rem_sid + " directory=" + self.config.rem_directory + " full=y dumpfile=" \
-              + RefreshUtils.capped_file_path(self.config.rem_backup_file) + "" \
-                                                                             " logfile=export_" \
-              + datetime.datetime.now().strftime("%Y%m%d") + ".log \n" \
-                                                             "EOF"
+        cmd = RefreshUtils.backup_cmd(self.config)
         r_list = RefreshUtils.call_command(cmd)
         for r in r_list:
-            print r
+             print r
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -178,7 +179,6 @@ class LB2Refresh:
         logging.info("Enviando backup...")
         cmd = 'scp ' + self.config.rem_osuser + '@' + self.config.rem_ip \
               + ':' + self.config.rem_backup_file + ' ' + self.config.backup_file
-        print cmd
         r, err = RefreshUtils.call_command(cmd)
         if err != "":
             RefreshUtils.leave_with_message(err)
@@ -416,7 +416,7 @@ def test_mode(config):
         print "Erro na conexão com o sqlplus!"
 
 
-def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
+def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script, with_backup):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
@@ -424,6 +424,7 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     :param send_backup: Especifica se é necessário enviar o backup ao destino.
     :param coletar_estatisticas: Especifica se deve realizar coleta de estatisticas
     :param pos_script: Script para ser executado após o script.
+    :param with_backup: Faz um backup no servidor remetente.
     :return: None
     """
     logging.debug("Método run")
@@ -431,9 +432,10 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
-    RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
-    l.run_backup()
-    if send_backup:
+    if with_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
+        l.run_backup()
+    if send_backup or with_backup:
         RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
         l.send_backup()
     if not dont_clean:
@@ -482,7 +484,8 @@ def main():
         build_stuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config, r.dont_clean, r.send_backup, r.coletar_estatisticas, r.pos_script)
+        #todo Enviar somente o R. Meu deus que burrice
+        run(r.config, r.dont_clean, r.send_backup, r.coletar_estatisticas, r.pos_script, r.with_backup)
 
 # Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':

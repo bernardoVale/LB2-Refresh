@@ -17,14 +17,14 @@
         "ip": "129.0.0.31",
         "ospwd": "oracle",
         "osuser": "oracle",
-        "backup_file": "/u01/app/oracle/backup/dpfull_$DATA.dmp",
+        "backup_file": "/u01/app/oracle/backup/dpfull_20141114.dmp",
         "senha": "oracle",
         "sid": "lb2app",
         "user": "sys",
         "var_dir": "/home/oracle/.bash_profile",
         "directory": "DATAPUMP"
     },
-    "logfile": "import_$DATA.log",
+    "logfile": "import_20141114.log",
     "schemas": [
         "TASY", 
         "TASY_VERSAO"

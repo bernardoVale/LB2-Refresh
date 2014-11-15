@@ -20,6 +20,15 @@ class TestCommands(unittest.TestCase):
     def setUp(self):
         self.r = LB2Refresh()
 
+    def test_backup_cmd(self):
+        self.r.read_config('config_withbkp.json')
+        self.r.build_config()
+        # Sempre vai falhar devido ao logfile. Quando necessário. altere na mao e teste
+        cmd = "ssh 129.0.0.31 /bin/bash << EOF \n\
+. /home/oracle/.bash_profile; \n\
+expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141114.log \n\
+EOF"
+        self.assertEquals(cmd,RefreshUtils.backup_cmd(self.r.config))
     def test_run_backup(self):
         # self.r.read_config('config.json')
         # self.r.build_config()

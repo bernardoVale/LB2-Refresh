@@ -5,6 +5,7 @@ import os
 import pkgutil
 import subprocess
 import re
+import datetime
 
 
 __author__ = 'bernardovale'
@@ -13,6 +14,24 @@ __author__ = 'bernardovale'
 class RefreshUtils:
     def __init__(self):
         pass
+
+    @staticmethod
+    def backup_cmd(config):
+        """
+        Constroi a linha de expdp dinamica a partir do Config
+        :param config: Classe Config
+        :return:
+        """
+        cmd = "ssh " + config.rem_ip + ' /bin/bash << EOF \n' \
+                                    '. ' + config.rem_var_dir + "; \nexpdp \\\"" \
+      + config.rem_user + "/" + config.rem_senha \
+      + "@" + config.rem_sid + " AS SYSDBA\\\" directory=" + config.rem_directory + " full=y dumpfile=" \
+      + RefreshUtils.capped_file_path(config.rem_backup_file) + "" \
+                                                                     " logfile=export_" \
+      + datetime.datetime.now().strftime("%Y%m%d") + ".log \n" \
+                                                   "EOF"
+        print cmd
+        return cmd
 
     @staticmethod
     def run_remote_cmd(cmd, credenciais):
