@@ -26,15 +26,9 @@ class TestCommands(unittest.TestCase):
         # Sempre vai falhar devido ao logfile. Quando necessário. altere na mao e teste
         cmd = "ssh 129.0.0.31 /bin/bash << EOF \n\
 . /home/oracle/.bash_profile; \n\
-expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141114.log \n\
+expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141115.log \n\
 EOF"
         self.assertEquals(cmd,RefreshUtils.backup_cmd(self.r.config))
-    def test_run_backup(self):
-        # self.r.read_config('config.json')
-        # self.r.build_config()
-        # print self.r.run_backup()
-        RefreshUtils.call_command('ssh 10.200.0.213 hostname -i')
-        list = RefreshUtils.run_remote_cmd('ls -l /home','d')
 
 
     def test_imported_successful(self):

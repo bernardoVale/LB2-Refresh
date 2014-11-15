@@ -179,7 +179,8 @@ def build_question(question, my_type, default):
     awnser = ''
     is_valid = False
     while not is_valid:
-        awnser = raw_input(question)
+        print question
+        awnser = raw_input('> ')
         if awnser == '':
             awnser = default
             return awnser

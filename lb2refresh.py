@@ -87,13 +87,7 @@ def parse_args():
     parser.add_argument('--version', action='version', version='%(prog)s v1.2',
                         help='Exibe a versão atual do sistema.')
     p = parser.parse_args()
-    # pe de macaco
-    i = 0
-    if p.is_building:
-        i += 1
-    if p.is_testing:
-        i += 1
-    if i > 1:
+    if p.is_testing and p.is_building:
         print "Os parametros --build ou --test não podem ser utilizados juntos"
         exit(2)
     if not any(p.loglevel in s for s in ['DEBUG', 'ERROR', 'WARNING', 'INFO']):
@@ -112,6 +106,7 @@ def parse_args():
 
 
 class LB2Refresh:
+
     def __init__(self):
         self.config = ''
 
@@ -124,7 +119,7 @@ class LB2Refresh:
         cmd = RefreshUtils.backup_cmd(self.config)
         r_list = RefreshUtils.call_command(cmd)
         for r in r_list:
-             print r
+            print r
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -177,8 +172,8 @@ class LB2Refresh:
         """
         logging.debug("Método send_backup")
         logging.info("Enviando backup...")
-        cmd = 'scp ' + self.config.rem_osuser + '@' + self.config.rem_ip \
-              + ':' + self.config.rem_backup_file + ' ' + self.config.backup_file
+        cmd = "scp %s@%s:%s %s" % (self.config.rem_osuser, self.config.rem_ip,
+                                   self.config.rem_backup_file, self.config.backup_file)
         r, err = RefreshUtils.call_command(cmd)
         if err != "":
             RefreshUtils.leave_with_message(err)

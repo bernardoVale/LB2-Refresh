@@ -1,8 +1,6 @@
 # coding=utf-8
-import json
 import logging
 import os
-import pkgutil
 import subprocess
 import re
 import datetime
@@ -22,25 +20,13 @@ class RefreshUtils:
         :param config: Classe Config
         :return:
         """
-        cmd = "ssh " + config.rem_ip + ' /bin/bash << EOF \n' \
-                                    '. ' + config.rem_var_dir + "; \nexpdp \\\"" \
-      + config.rem_user + "/" + config.rem_senha \
-      + "@" + config.rem_sid + " AS SYSDBA\\\" directory=" + config.rem_directory + " full=y dumpfile=" \
-      + RefreshUtils.capped_file_path(config.rem_backup_file) + "" \
-                                                                     " logfile=export_" \
-      + datetime.datetime.now().strftime("%Y%m%d") + ".log \n" \
-                                                   "EOF"
-        print cmd
+        cmd = ("ssh %s /bin/bash << EOF \n. %s; \nexpdp \\\"%s/%s@%s AS SYSDBA\\\""
+               " directory=%s full=y dumpfile=%s logfile=export_%s.log \nEOF"
+               % (
+            config.rem_ip, config.rem_var_dir, config.rem_user, config.rem_senha, config.rem_sid, config.rem_directory,
+            RefreshUtils.capped_file_path(config.rem_backup_file),
+            datetime.datetime.now().strftime("%Y%m%d")))
         return cmd
-
-    @staticmethod
-    def run_remote_cmd(cmd, credenciais):
-        HOST="root/alsk1029QWE#@10.200.0.114"
-        output = ''
-        command = 'ls -l'
-        #run_remote(cmd=command, ip='10.200.0.114',username='root', password='alsk1029QWE#')
-        # ssh = SSH(ip='10.200.0.114', password='coco', username='root')
-        # ssh.connect()
 
     @staticmethod
     def refresh_status(mensagem):
