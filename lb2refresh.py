@@ -110,6 +110,21 @@ class LB2Refresh:
     def __init__(self):
         self.config = ''
 
+    def exported_successful(self, log):
+        """
+        Verifica se o expdp foi um sucesso
+        :param log: log da exportação
+        :return: bool
+        """
+        # Abrindo lista de erros fatais
+        logging.debug('Método exported_successful')
+        error_list = pkgutil.get_data("utils", "export_fatal_errors.txt").split('\n')
+        # Varrendo a lista para verificar se existe algum erro fatal
+        for error in error_list:
+            if error in log:
+                logging.error('Erro fatal encontrado no backup. Erro encontrado:' + error)
+                return False
+        return True
 
     def run_backup(self):
         """
@@ -117,9 +132,12 @@ class LB2Refresh:
         :return:
         """
         cmd = RefreshUtils.backup_cmd(self.config)
-        r_list = RefreshUtils.call_command(cmd)
-        for r in r_list:
-            print r
+        logging.debug("Backup: %s" % cmd)
+        err, log  = RefreshUtils.call_command(cmd)
+        if err != "" or not self.exported_successful(log):
+            RefreshUtils.leave_with_message("Erro no backup, saindo...")
+
+        logging.info("Backup realizado com sucesso!")
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):

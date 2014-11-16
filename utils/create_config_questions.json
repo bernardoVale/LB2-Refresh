@@ -20,12 +20,12 @@
         "default" : "oracle"
     },
     "remetente_backup_file" : {
-        "pergunta" : "Backup no servidor remoto? Default(/u01/app/oracle/backup/dpfull_$DATA)",
-        "default" : "/u01/app/oracle/backup/dpfull_$DATA"
+        "pergunta" : "Backup no servidor remoto? Default(/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp)",
+        "default" : "/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp"
     },
     "remetente_sid" : {
         "pergunta" : "SID do banco de dados que fará o backup. Default(lb2app)",
-        "default" : "oradb"
+        "default" : "lb2app"
     },
     "remetente_user" : {
         "pergunta" : "Usuário de conexão com o banco. Default(sys)",
@@ -76,8 +76,8 @@
         "default" : "/home/oracle/.bash_profile"
     },
     "backup_file" : {
-        "pergunta" : "Backup a ser utilizado na importação: Default(/u01/app/oracle/backup/dpfull_$DATA)",
-        "default" : "/u01/app/oracle/backup/dpfull_$DATA"
+        "pergunta" : "Backup a ser utilizado na importação: Default(/u01/app/oracle/backup/dpfull_$DATA.dmp)",
+        "default" : "/u01/app/oracle/backup/dpfull_$DATA.dmp"
     },
     "log_file" : {
         "pergunta" : "Log da importação (Datapump) Default(import_$DATA)",

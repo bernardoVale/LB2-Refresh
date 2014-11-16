@@ -31,6 +31,21 @@ EOF"
         self.assertEquals(cmd,RefreshUtils.backup_cmd(self.r.config))
 
 
+    def test_exported_successful(self):
+        self.assertTrue(
+            self.r.exported_successful(self.fileToString('../tests/impdp_sucess01.txt')))
+        self.assertTrue(
+            self.r.exported_successful(self.fileToString('../tests/impdp_sucess02.txt')))
+        # IMPDP Com erros fatais
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure01.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure02.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure03.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure04.txt')))
+
     def test_imported_successful(self):
         #Exemplares de sucesso
         #/Users/bernardovale/PycharmProjects/LB2-Refresh/unit_test/utils-tests.py
