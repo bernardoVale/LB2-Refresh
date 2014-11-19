@@ -106,7 +106,6 @@ def parse_args():
 
 
 class LB2Refresh:
-
     def __init__(self):
         self.config = ''
 
@@ -133,7 +132,7 @@ class LB2Refresh:
         """
         cmd = RefreshUtils.backup_cmd(self.config)
         logging.debug("Backup: %s" % cmd)
-        err, log  = RefreshUtils.call_command(cmd)
+        err, log = RefreshUtils.call_command(cmd)
         if err != "" or not self.exported_successful(log):
             RefreshUtils.leave_with_message("Erro no backup, saindo...")
 
@@ -449,7 +448,7 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script, with_
         RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
         l.run_backup()
     if send_backup or with_backup:
-        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR QUE SERÁ ATUALIZADO")
         l.send_backup()
     if not dont_clean:
         # Então limpe

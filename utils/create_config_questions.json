@@ -28,7 +28,7 @@
         "default" : "lb2app"
     },
     "remetente_user" : {
-        "pergunta" : "Usuário de conexão com o banco. Default(sys)",
+        "pergunta" : "Usuário de conexão com o banco. Deve ser SYSDBA! Default(sys)",
         "default" : "sys"
     },
     "remetente_senha" : {
@@ -40,12 +40,12 @@
         "default" : "DATAPUMP"
     },
     "remetente_var_dir" : {
-        "pergunta" : "Arquivo com as variáveis de ambiente. Default(/home/oracle/.bash_profile)",
+        "pergunta" : "Arquivo com as variáveis de ambiente do Oracle. Default(/home/oracle/.bash_profile)",
         "default" : "/home/oracle/.bash_profile"
     },
         "destino_ip" : {
-        "pergunta" : "IP do servidor que receberá a importação? Default($IP) ",
-        "default" : "$IP"
+        "pergunta" : "IP do servidor que receberá a importação? Default(127.0.0.1) ",
+        "default" : "127.0.0.1"
     },
     "destino_osuser" : {
         "pergunta" : "Usuário do SO que iremos conectar? Default(oracle)",
@@ -57,7 +57,7 @@
     },
     "destino_sid" : {
         "pergunta" : "SID do banco de dados que será atualizado. Default(lb2app)",
-        "default" : "oradb"
+        "default" : "lb2app"
     },
     "destino_user" : {
         "pergunta" : "Usuário de conexão com o banco (DEVE SER SYSDBA). Default(sys)",
@@ -76,12 +76,12 @@
         "default" : "/home/oracle/.bash_profile"
     },
     "backup_file" : {
-        "pergunta" : "Backup a ser utilizado na importação: Default(/u01/app/oracle/backup/dpfull_$DATA.dmp)",
-        "default" : "/u01/app/oracle/backup/dpfull_$DATA.dmp"
+        "pergunta" : "Backup a ser utilizado na importação: Default(/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp)",
+        "default" : "/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp"
     },
     "log_file" : {
-        "pergunta" : "Log da importação (Datapump) Default(import_$DATA)",
-        "default" : "import_$DATA"
+        "pergunta" : "Log da importação (Datapump) Default(import_$DATA.log)",
+        "default" : "import_$DATA.log"
     },
     "schemas" : {
         "pergunta" : "Lista de schemas a ser atualizados separados por vírgula: Default(TASY,TASY_VERSAO)",

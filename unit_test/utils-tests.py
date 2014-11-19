@@ -26,7 +26,7 @@ class TestCommands(unittest.TestCase):
         # Sempre vai falhar devido ao logfile. Quando necessário. altere na mao e teste
         cmd = "ssh 129.0.0.31 /bin/bash << EOF \n\
 . /home/oracle/.bash_profile; \n\
-expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141115.log \n\
+expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141119.log \n\
 EOF"
         self.assertEquals(cmd,RefreshUtils.backup_cmd(self.r.config))
 
