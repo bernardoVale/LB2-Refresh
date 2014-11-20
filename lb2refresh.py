@@ -347,7 +347,7 @@ class LB2Refresh:
         """
         logging.debug("Método build_schema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        sql = pkgutil.get_data('sqls', 'coleta_estatisticas.sql')
+        sql = pkgutil.get_data('sqls', 'lb2_refresh_clean.sql')
         result = self.run_query(sql, False)
         logging.info(result)
         if self.check_procs():
