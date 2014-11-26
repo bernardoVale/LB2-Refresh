@@ -207,7 +207,7 @@ class LB2Refresh:
         logging.debug("Método restart_database")
         while retry_count > 0:
             logging.info("Parando o banco de dados...")
-            r = self.run_query(shutdown_query, False)
+            r = RefreshUtils.run_sqlplus('/', shutdown_query, False, True)
             logging.info(r)
             if RefreshUtils.restarted_successful(r):
                 return True
@@ -415,8 +415,8 @@ def test_mode(config):
     l.build_config()
     if l.test_conn():
         print "Conexão sqlplus OK!"
-        r, err = RefreshUtils.call_command('echo -n teste')
-        if r == "teste" and err == "":
+        r, err = RefreshUtils.call_command('echo teste')
+        if r == "teste\n" and err == "":
             print "Chamada ao bash OK!"
             if l.check_ora_variables():
                 print "Variáveis de Ambiente OK!"
