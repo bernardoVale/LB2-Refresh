@@ -10,3 +10,7 @@ Python 2.7
 or 
 
 Python 2.5+ with argparse module
+
+**Product Objetive**
+
+Simplicity and comprehensibility for Oracle Schema updates jobs.
