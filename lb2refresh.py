@@ -225,9 +225,9 @@ class LB2Refresh:
         logging.debug("Método clean_schemas")
         retry_count = 3
         x = lambda y: True if 'Resultado:0:' in y else False
-        if not self.restart_database(retry_count):
-            RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
-                                            "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
+        # if not self.restart_database(retry_count):
+        #     RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
+        #                                     "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario " + schema)
             sql = "set serveroutput on; \n" \
