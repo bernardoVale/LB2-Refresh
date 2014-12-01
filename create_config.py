@@ -259,7 +259,7 @@ def main():
     if remetente_bkp[0].capitalize() == 'N':
         remetente = build_question(q['remetente']['pergunta'], YESNO, q['remetente']['default'])
         if remetente[0].capitalize() == 'Y':
-            remetente_dict['ip'] = build_question(q['remetente_ip']['pergunta'], IP, ['remetente_ip']['default'])
+            remetente_dict['ip'] = build_question(q['remetente_ip']['pergunta'], IP, q['remetente_ip']['default'])
             remetente_dict['osuser'] = build_question(q['remetente_osuser']['pergunta'], TEXT
                                                        , q['remetente_osuser']['default'])
             remetente_dict['ospwd'] = build_question(q['remetente_ospwd']['pergunta'], TEXT,
