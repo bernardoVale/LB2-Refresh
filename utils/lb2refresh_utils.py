@@ -13,6 +13,16 @@ class RefreshUtils:
     def __init__(self):
         pass
 
+    def check_for_directory(self, directory):
+        """
+        Verifica se o diretório existe no banco destino
+        :param directory: dir
+        :return: bool
+        """
+
+        #query = "select directory_path from dba_directories" \
+        #        "where directory_path = %s" % directory
+
     @staticmethod
     def backup_cmd(config):
         """
@@ -95,6 +105,15 @@ class RefreshUtils:
          """
         logging.debug("Método capped_file_path")
         return os.path.basename(my_file)
+
+    @staticmethod
+    def only_path(my_file):
+        """
+        Método para retornar somente o path
+        :param my_file:
+        :return:
+        """
+        return os.path.dirname(my_file)
 
     @staticmethod
     def run_sqlplus(credencias, query, pretty, is_sysdba):
