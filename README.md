@@ -3,12 +3,14 @@ LB2-Refresh
 
 Python script for schema update inside the Oracle Database
 
-**Pre-Reqs:**
-
-cx_Oracle
-
-Oracle Instant client
+**PRE REQUISITES**
 
 Python 2.7
 
-[pexpect] (http://pexpect.sourceforge.net/pxssh.html) -- Remote SSH :
+or 
+
+Python 2.5+ with argparse module
+
+**Product Objetive**
+
+Simplicity and comprehensibility for Oracle Schema updates jobs.

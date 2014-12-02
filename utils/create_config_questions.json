@@ -1,0 +1,94 @@
+{
+    "remetente_bkp" : {
+        "pergunta" : "Deseja realizar o backup no servidor remoto? [yes/no] Default:(no) ",
+        "default" : "No"
+    },
+    "remetente" : {
+        "pergunta" : "Deseja buscar o backup em um servidor remoto? [yes/no] Default:(no) ",
+        "default" : "No"
+    },
+    "remetente_ip" : {
+        "pergunta" : "IP do servidor remoto? Default(127.0.0.1) ",
+        "default" : "127.0.0.1"
+    },
+    "remetente_osuser" : {
+        "pergunta" : "Usuário do servidor remoto? Default(oracle)",
+        "default" : "oracle"
+    },
+    "remetente_ospwd" : {
+        "pergunta" : "Senha do Usuário do servidor remoto? Default(oracle)",
+        "default" : "oracle"
+    },
+    "remetente_backup_file" : {
+        "pergunta" : "Backup no servidor remoto? Default(/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp)",
+        "default" : "/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp"
+    },
+    "remetente_sid" : {
+        "pergunta" : "SID do banco de dados que fará o backup. Default(lb2app)",
+        "default" : "lb2app"
+    },
+    "remetente_user" : {
+        "pergunta" : "Usuário de conexão com o banco. Deve ser SYSDBA! Default(sys)",
+        "default" : "sys"
+    },
+    "remetente_senha" : {
+        "pergunta" : "Senha do Usuário de conexão com o banco. Default(oracle)",
+        "default" : "oracle"
+    },
+    "remetente_directory" : {
+        "pergunta" : "Diretório do DATAPUMP. Default(DATAPUMP)",
+        "default" : "DATAPUMP"
+    },
+    "remetente_var_dir" : {
+        "pergunta" : "Arquivo com as variáveis de ambiente do Oracle. Default(/home/oracle/.bash_profile)",
+        "default" : "/home/oracle/.bash_profile"
+    },
+        "destino_ip" : {
+        "pergunta" : "IP do servidor que receberá a importação? Default(127.0.0.1) ",
+        "default" : "127.0.0.1"
+    },
+    "destino_osuser" : {
+        "pergunta" : "Usuário do SO que iremos conectar? Default(oracle)",
+        "default" : "oracle"
+    },
+    "destino_ospwd" : {
+        "pergunta" : "Senha do Usuário? Default(oracle)",
+        "default" : "oracle"
+    },
+    "destino_sid" : {
+        "pergunta" : "SID do banco de dados que será atualizado. Default(lb2app)",
+        "default" : "lb2app"
+    },
+    "destino_user" : {
+        "pergunta" : "Usuário de conexão com o banco (DEVE SER SYSDBA). Default(sys)",
+        "default" : "sys"
+    },
+    "destino_senha" : {
+        "pergunta" : "Senha do Usuário de conexão com o banco. Default(oracle)",
+        "default" : "oracle"
+    },
+    "destino_directory" : {
+        "pergunta" : "Diretório do DATAPUMP. Default(DATAPUMP)",
+        "default" : "DATAPUMP"
+    },
+    "destino_var_dir" : {
+        "pergunta" : "Arquivo com as variáveis de ambiente. Default(/home/oracle/.bash_profile)",
+        "default" : "/home/oracle/.bash_profile"
+    },
+    "backup_file" : {
+        "pergunta" : "Backup a ser utilizado na importação: Default(/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp)",
+        "default" : "/u01/app/oracle/backup/datapump/dpfull_$DATA.dmp"
+    },
+    "log_file" : {
+        "pergunta" : "Log da importação (Datapump) Default(import_$DATA.log)",
+        "default" : "import_$DATA.log"
+    },
+    "schemas" : {
+        "pergunta" : "Lista de schemas a ser atualizados separados por vírgula: Default(TASY,TASY_VERSAO)",
+        "default" : "TASY,TASY_VERSAO"
+    },
+    "datapump_options" : {
+        "pergunta" : "Deseja inserir algum opcional no import do Datapump? [yes/no] Default:(no)",
+        "default" : "No"
+    }
+}

@@ -36,15 +36,26 @@ class Config:
                     self.rem_osuser = config['remetente']['osuser']
                     self.rem_ospwd = config['remetente']['ospwd']
                     self.rem_backup_file = self.parse_annotations(config['remetente']['backup_file'])
+                    # Opcionais, necessario para o modulo do backup (expdp)
+                    if 'senha' in config['remetente']:
+                        self.rem_senha = config['remetente']['senha']
+                    if 'sid' in config['remetente']:
+                        self.rem_sid = config['remetente']['sid']
+                    if 'user' in config['remetente']:
+                        self.rem_user = config['remetente']['user']
+                    if 'var_dir' in config['remetente']:
+                        self.rem_var_dir = config['remetente']['var_dir']
+                    if 'directory' in config['remetente']:
+                        self.rem_directory = config['remetente']['directory']
                 # Variáveis opcionais
                 if 'datapump_options' in config:
                     if 'remap_tablespace' in config['datapump_options']:
                         self.remap_tablespace = config['datapump_options']['remap_tablespace']
                     if 'remap_schema' in config['datapump_options']:
                         self.remap_schema = config['datapump_options']['remap_schema']
-            except (KeyError, NameError):
+            except (KeyError, NameError) as e:
                 logging.error("Falha ao ler um dos parametros."
-                              " Verifique o JSON de configuração")
+                              " Verifique o JSON de configuração: Param: %s", e)
                 exit(2)
 
     def parse_annotations(self, text):

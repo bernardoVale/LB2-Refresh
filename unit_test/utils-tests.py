@@ -19,6 +19,33 @@ class TestCommands(unittest.TestCase):
 
     def setUp(self):
         self.r = LB2Refresh()
+
+    def test_backup_cmd(self):
+        self.r.read_config('config_withbkp.json')
+        self.r.build_config()
+        # Sempre vai falhar devido ao logfile. Quando necessário. altere na mao e teste
+        cmd = "ssh 129.0.0.31 /bin/bash << EOF \n\
+. /home/oracle/.bash_profile; \n\
+expdp \\\"sys/oracle@lb2app AS SYSDBA\\\" directory=DATAPUMP full=y dumpfile=dpfull_20141114.dmp logfile=export_20141119.log \n\
+EOF"
+        self.assertEquals(cmd,RefreshUtils.backup_cmd(self.r.config))
+
+
+    def test_exported_successful(self):
+        self.assertTrue(
+            self.r.exported_successful(self.fileToString('../tests/impdp_sucess01.txt')))
+        self.assertTrue(
+            self.r.exported_successful(self.fileToString('../tests/impdp_sucess02.txt')))
+        # IMPDP Com erros fatais
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure01.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure02.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure03.txt')))
+        self.assertFalse(
+            self.r.exported_successful(self.fileToString('../tests/impdp_failure04.txt')))
+
     def test_imported_successful(self):
         #Exemplares de sucesso
         #/Users/bernardovale/PycharmProjects/LB2-Refresh/unit_test/utils-tests.py
@@ -113,3 +140,13 @@ class TestConfigFile(unittest.TestCase):
         file2 = RefreshUtils.capped_file_path('teste.dmp')
         self.assertEqual(file, 'teste.dmp')
         self.assertEqual(file2, 'teste.dmp')
+
+    def test_rementente_bkp_option(self):
+        self.r.read_config('config_withbkp.json')
+        self.r.build_config()
+        self.assertEquals('oracle', self.r.config.rem_senha)
+        self.assertEquals('sys', self.r.config.rem_user)
+        self.assertEquals('DATAPUMP', self.r.config.rem_directory)
+        self.assertEquals('/home/oracle/.bash_profile', self.r.config.rem_var_dir)
+        self.assertEquals('lb2app', self.r.config.rem_sid)
+

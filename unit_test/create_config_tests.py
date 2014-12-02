@@ -14,6 +14,7 @@ class TestCreateConfig(unittest.TestCase):
         self.LOG = 5
         self.DMP = 6
         self.SCHEMAS = 7
+
     def test_yesno(self):
         self.assertTrue(create_config.isvalid_yesno('Yes'))
         self.assertTrue(create_config.isvalid_yesno('Y'))
@@ -23,30 +24,30 @@ class TestCreateConfig(unittest.TestCase):
         self.assertFalse(create_config.isvalid_yesno(''))
 
     def test_path(self):
-        self.assertEquals(create_config.isvalid_path('/tmp/teste.json'),True)
-        self.assertEquals(create_config.isvalid_path('config.json'),True)
-        self.assertNotEqual(create_config.isvalid_path(''),True)
-        self.assertNotEqual(create_config.isvalid_path('capa.txt'),True)
+        self.assertEquals(create_config.isvalid_path('/tmp/teste.json'), True)
+        self.assertEquals(create_config.isvalid_path('config.json'), True)
+        self.assertNotEqual(create_config.isvalid_path(''), True)
+        self.assertNotEqual(create_config.isvalid_path('capa.txt'), True)
 
     def test_dump(self):
-        self.assertEquals(create_config.isvalid_dump('/tmp/teste.dmp'),True)
-        self.assertEquals(create_config.isvalid_dump('config.dmp'),True)
-        self.assertNotEqual(create_config.isvalid_dump(''),True)
-        self.assertNotEqual(create_config.isvalid_dump('capa.txt'),True)
+        self.assertEquals(create_config.isvalid_dump('/tmp/teste.dmp'), True)
+        self.assertEquals(create_config.isvalid_dump('config.dmp'), True)
+        self.assertNotEqual(create_config.isvalid_dump(''), True)
+        self.assertNotEqual(create_config.isvalid_dump('capa.txt'), True)
 
     def test_log(self):
-        self.assertEquals(create_config.isvalid_log('/tmp/teste.log'),True)
-        self.assertEquals(create_config.isvalid_log('config.log'),True)
-        self.assertNotEqual(create_config.isvalid_log(''),True)
-        self.assertNotEqual(create_config.isvalid_log('capa.txt'),True)
+        self.assertEquals(create_config.isvalid_log('/tmp/teste.log'), True)
+        self.assertEquals(create_config.isvalid_log('config.log'), True)
+        self.assertNotEqual(create_config.isvalid_log(''), True)
+        self.assertNotEqual(create_config.isvalid_log('capa.txt'), True)
 
     def test_ip(self):
         self.assertTrue(create_config.isvalid_ip('127.0.0.1'))
 
     def test_isvalid(self):
-        self.assertTrue(create_config.isvalid('Yes',self.YESNO,'Yes'))
-        self.assertFalse(create_config.isvalid('CARA',self.YESNO,'Yes'))
-        self.assertFalse(create_config.isvalid('',self.YESNO,'Yes'))
+        self.assertTrue(create_config.isvalid('Yes', self.YESNO))
+        self.assertFalse(create_config.isvalid('CARA', self.YESNO))
+        self.assertFalse(create_config.isvalid('', self.YESNO))
 
     def test_text(self):
         self.assertTrue(create_config.isvalid_text('oracle'))
@@ -78,17 +79,21 @@ class TestCreateConfig(unittest.TestCase):
         yn_dmp = "Resposta inválida, o arquivo deve ter extensão .dmp!"
         yn_schemas = "Schemas inválidos, garanta que não exista espaço ou que não " \
                "tenha inserido schemas do sistema (SYS,SYSTEM)"
-        self.assertEquals(create_config.hint(self.YESNO),yn_hint)
-        self.assertNotEqual(create_config.hint(self.YESNO),'aeeoo')
-        self.assertEquals(create_config.hint(self.PATH),yn_path)
-        self.assertNotEqual(create_config.hint(self.PATH),'aeeoo')
-        self.assertEquals(create_config.hint(self.IP),yn_ip)
-        self.assertNotEqual(create_config.hint(self.IP),'aeeoo')
-        self.assertEquals(create_config.hint(self.TEXT),yn_text)
-        self.assertNotEqual(create_config.hint(self.TEXT),'aeeoo')
-        self.assertEquals(create_config.hint(self.LOG),yn_log)
-        self.assertNotEqual(create_config.hint(self.LOG),'aeeoo')
-        self.assertEquals(create_config.hint(self.DMP),yn_dmp)
-        self.assertNotEqual(create_config.hint(self.DMP),'aeeoo')
-        self.assertEquals(create_config.hint(self.SCHEMAS),yn_schemas)
-        self.assertNotEqual(create_config.hint(self.SCHEMAS),'aeeoo')
+        self.assertEquals(create_config.hint(self.YESNO), yn_hint)
+        self.assertNotEqual(create_config.hint(self.YESNO), 'aeeoo')
+        self.assertEquals(create_config.hint(self.PATH), yn_path)
+        self.assertNotEqual(create_config.hint(self.PATH), 'aeeoo')
+        self.assertEquals(create_config.hint(self.IP), yn_ip)
+        self.assertNotEqual(create_config.hint(self.IP), 'aeeoo')
+        self.assertEquals(create_config.hint(self.TEXT), yn_text)
+        self.assertNotEqual(create_config.hint(self.TEXT), 'aeeoo')
+        self.assertEquals(create_config.hint(self.LOG), yn_log)
+        self.assertNotEqual(create_config.hint(self.LOG), 'aeeoo')
+        self.assertEquals(create_config.hint(self.DMP), yn_dmp)
+        self.assertNotEqual(create_config.hint(self.DMP), 'aeeoo')
+        self.assertEquals(create_config.hint(self.SCHEMAS), yn_schemas)
+        self.assertNotEqual(create_config.hint(self.SCHEMAS), 'aeeoo')
+
+    def test_read_config(self):
+        my_dict = create_config.read_questions()
+        self.assertEquals(my_dict['remetente_bkp']['default'],'No')

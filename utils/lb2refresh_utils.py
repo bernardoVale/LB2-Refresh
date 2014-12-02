@@ -1,10 +1,9 @@
 # coding=utf-8
-import json
 import logging
 import os
-import pkgutil
 import subprocess
 import re
+import datetime
 
 
 __author__ = 'bernardovale'
@@ -13,6 +12,21 @@ __author__ = 'bernardovale'
 class RefreshUtils:
     def __init__(self):
         pass
+
+    @staticmethod
+    def backup_cmd(config):
+        """
+        Constroi a linha de expdp dinamica a partir do Config
+        :param config: Classe Config
+        :return:
+        """
+        cmd = ("ssh %s /bin/bash << EOF \n. %s; \nexpdp \\\"%s/%s@%s AS SYSDBA\\\""
+               " directory=%s full=y dumpfile=%s logfile=export_%s.log \nEOF"
+               % (
+            config.rem_ip, config.rem_var_dir, config.rem_user, config.rem_senha, config.rem_sid, config.rem_directory,
+            RefreshUtils.capped_file_path(config.rem_backup_file),
+            datetime.datetime.now().strftime("%Y%m%d")))
+        return cmd
 
     @staticmethod
     def refresh_status(mensagem):

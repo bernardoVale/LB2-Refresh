@@ -1,0 +1,32 @@
+{
+    "backup_file": "/u01/app/oracle/backup/dpfull_$DATA.dmp",
+    "datapump_options": {
+        "remap_tablespace": "TASY_DATA:HELPDESK_DATA"
+    },
+    "destino": {
+        "directory": "DATAPUMP", 
+        "ip": "10.200.0..0.0.31",
+        "ospwd": "oracle", 
+        "osuser": "oracle", 
+        "senha": "oracle", 
+        "sid": "pdbsp",
+        "user": "sys",
+        "var_dir": "/home/oracle/.bash_profile"
+    },
+    "remetente": {
+        "ip": "129.0.0.31",
+        "ospwd": "oracle",
+        "osuser": "oracle",
+        "backup_file": "/u01/app/oracle/backup/dpfull_20141114.dmp",
+        "senha": "oracle",
+        "sid": "lb2app",
+        "user": "sys",
+        "var_dir": "/home/oracle/.bash_profile",
+        "directory": "DATAPUMP"
+    },
+    "logfile": "import_20141114.log",
+    "schemas": [
+        "TASY", 
+        "TASY_VERSAO"
+    ]
+}

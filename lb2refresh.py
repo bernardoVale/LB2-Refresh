@@ -1,13 +1,13 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #                   LB2 Refresh
 #
 #       Autor: Bernardo S E Vale
 #       Data Inicio:  16/06/2014
 #       Data Release: 07/11/2014
 #       email: bernardo.vale@lb2.com.br
-#       Versão: v1.1
+#       Versão: v1.2
 #       LB2 Consultoria - Leading Business 2 the Next Level!
 #-------------------------------------------------------------
 import argparse
@@ -69,6 +69,12 @@ def parse_args():
                         help='Realiza a coleta de estatisticas após a importação.\n Verificar o arquivo:'
                              ' coleta_estatisticas.sql')
 
+    parser.add_argument('--withbackup', action='store_true', default=False,
+                        dest='with_backup',
+                        help='Realiza um backup no remetente e o utiliza como base para importação. \n'
+                             'OBS: Utilize o create_config.py para gerar as informações necessárias para o backup \n'
+                             'OBS_2: Utilizando esta opção o --sendbackup torna-se implícito')
+
     parser.add_argument('--sendbackup', action='store_true', default=False,
                         dest='send_backup',
                         help='Envia o .dmp para o servidor destino antes da importação. \n'
@@ -78,16 +84,10 @@ def parse_args():
                              'VERIFIQUE O ARQUIVO ''\'exemplo_com_rementente.json''\' para utilizar esta opção.\n'
                              'NECESSÁRIO FAZER A TROCA DE CHAVES DO SSH')
 
-    parser.add_argument('--version', action='version', version='%(prog)s v1.1',
+    parser.add_argument('--version', action='version', version='%(prog)s v1.2',
                         help='Exibe a versão atual do sistema.')
     p = parser.parse_args()
-    # pe de macaco
-    i = 0
-    if p.is_building:
-        i += 1
-    if p.is_testing:
-        i += 1
-    if i > 1:
+    if p.is_testing and p.is_building:
         print "Os parametros --build ou --test não podem ser utilizados juntos"
         exit(2)
     if not any(p.loglevel in s for s in ['DEBUG', 'ERROR', 'WARNING', 'INFO']):
@@ -108,6 +108,35 @@ def parse_args():
 class LB2Refresh:
     def __init__(self):
         self.config = ''
+
+    def exported_successful(self, log):
+        """
+        Verifica se o expdp foi um sucesso
+        :param log: log da exportação
+        :return: bool
+        """
+        # Abrindo lista de erros fatais
+        logging.debug('Método exported_successful')
+        error_list = pkgutil.get_data("utils", "export_fatal_errors.txt").split('\n')
+        # Varrendo a lista para verificar se existe algum erro fatal
+        for error in error_list:
+            if error in log:
+                logging.error('Erro fatal encontrado no backup. Erro encontrado:' + error)
+                return False
+        return True
+
+    def run_backup(self):
+        """
+        Teste de inicio do expdp remoto.
+        :return:
+        """
+        cmd = RefreshUtils.backup_cmd(self.config)
+        logging.debug("Backup: %s" % cmd)
+        err, log = RefreshUtils.call_command(cmd)
+        if err != "" or not self.exported_successful(log):
+            RefreshUtils.leave_with_message("Erro no backup, saindo...")
+
+        logging.info("Backup realizado com sucesso!")
 
     # noinspection PyMethodMayBeStatic
     def imported_successful(self, log):
@@ -160,9 +189,8 @@ class LB2Refresh:
         """
         logging.debug("Método send_backup")
         logging.info("Enviando backup...")
-        cmd = 'scp ' + self.config.rem_osuser + '@' + self.config.rem_ip \
-              + ':' + self.config.rem_backup_file + ' ' + self.config.backup_file
-        print cmd
+        cmd = "scp %s@%s:%s %s" % (self.config.rem_osuser, self.config.rem_ip,
+                                   self.config.rem_backup_file, self.config.backup_file)
         r, err = RefreshUtils.call_command(cmd)
         if err != "":
             RefreshUtils.leave_with_message(err)
@@ -179,7 +207,7 @@ class LB2Refresh:
         logging.debug("Método restart_database")
         while retry_count > 0:
             logging.info("Parando o banco de dados...")
-            r = self.run_query(shutdown_query, False)
+            r = RefreshUtils.run_sqlplus('/', shutdown_query, False, True)
             logging.info(r)
             if RefreshUtils.restarted_successful(r):
                 return True
@@ -197,9 +225,9 @@ class LB2Refresh:
         logging.debug("Método clean_schemas")
         retry_count = 3
         x = lambda y: True if 'Resultado:0:' in y else False
-        if not self.restart_database(retry_count):
-            RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
-                                            "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
+        # if not self.restart_database(retry_count):
+        #     RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
+        #                                     "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
         for schema in self.config.schemas:
             logging.info("Realizando limpeza do usuario " + schema)
             sql = "set serveroutput on; \n" \
@@ -319,7 +347,7 @@ class LB2Refresh:
         """
         logging.debug("Método build_schema")
         logging.info("Abrindo arquivo lb2_refresh_clean.sql")
-        sql = pkgutil.get_data('sqls', 'coleta_estatisticas.sql')
+        sql = pkgutil.get_data('sqls', 'lb2_refresh_clean.sql')
         result = self.run_query(sql, False)
         logging.info(result)
         if self.check_procs():
@@ -387,8 +415,8 @@ def test_mode(config):
     l.build_config()
     if l.test_conn():
         print "Conexão sqlplus OK!"
-        r, err = RefreshUtils.call_command('echo -n teste')
-        if r == "teste" and err == "":
+        r, err = RefreshUtils.call_command('echo teste')
+        if r == "teste\n" and err == "":
             print "Chamada ao bash OK!"
             if l.check_ora_variables():
                 print "Variáveis de Ambiente OK!"
@@ -400,7 +428,7 @@ def test_mode(config):
         print "Erro na conexão com o sqlplus!"
 
 
-def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
+def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script, with_backup):
     """
     Método principal de execução
     :param config: Arquivo JSON de Configuração
@@ -408,6 +436,7 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     :param send_backup: Especifica se é necessário enviar o backup ao destino.
     :param coletar_estatisticas: Especifica se deve realizar coleta de estatisticas
     :param pos_script: Script para ser executado após o script.
+    :param with_backup: Faz um backup no servidor remetente.
     :return: None
     """
     logging.debug("Método run")
@@ -415,8 +444,11 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script):
     RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
-    if send_backup:
-        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR DE TESTES")
+    if with_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
+        l.run_backup()
+    if send_backup or with_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR QUE SERÁ ATUALIZADO")
         l.send_backup()
     if not dont_clean:
         # Então limpe
@@ -453,7 +485,7 @@ def main():
     # Configuração do Log
     filename = r.log_dir + '/' + 'LB2Refresh_' + datetime.datetime.now().strftime("%Y%m%d%H%M") + '.log'
     logging.basicConfig(filename=filename, level=r.loglevel,
-                         format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
+                        format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logging.info('Iniciando LB2-Refresh')
     # Parametro de --test acionado. Apenas testar
     if r.is_testing:
@@ -464,7 +496,8 @@ def main():
         build_stuff(r.config)
     else:
         logging.info("Executando no modo normal!")
-        run(r.config, r.dont_clean, r.send_backup, r.coletar_estatisticas, r.pos_script)
+        #todo Enviar somente o R. Meu deus que burrice
+        run(r.config, r.dont_clean, r.send_backup, r.coletar_estatisticas, r.pos_script, r.with_backup)
 
 # Isso é o método MAIN. Quem vem para executar testes unitários não passa por aqui
 if __name__ == '__main__':

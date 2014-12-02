@@ -2,14 +2,25 @@
     "backup_file": "/u01/app/oracle/backup/dpfull_$DATA.dmp",
     "destino": {
         "directory": "DATAPUMP", 
-        "ip": "129.0.0.31", 
+        "ip": "10.200.0.120",
         "ospwd": "oracle", 
         "osuser": "oracle", 
         "senha": "oracle", 
-        "sid": "oradb", 
+        "sid": "pdbsp",
         "user": "sys", 
         "var_dir": "/home/oracle/.bash_profile"
-    }, 
+    },
+    "remetente": {
+       "ip": "192.168.20.98",
+        "osuser": "capa",
+        "ospwd": "alsk1029QWE#",
+        "backup_file": "/u01/app/oracle/backup/dpfull_$DATA.dmp",
+        "senha": "karitec",
+        "sid": "producao",
+        "user": "sys",
+        "var_dir": "/home/oracle/.profile",
+        "directory": "DATAPUMP_DIR"
+    },
     "logfile": "import_$DATA.log",
     "schemas": [
         "TASY", 
