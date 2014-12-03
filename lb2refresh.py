@@ -110,11 +110,6 @@ class LB2Refresh:
     def __init__(self):
         self.config = ''
 
-    def check_directories(self):
-
-        dirs = DatapumpDir(self.config)
-        dirs.check_for_imp_dir()
-
     def exported_successful(self, log):
         """
         Verifica se o expdp foi um sucesso
@@ -450,28 +445,29 @@ def run(config, dont_clean, send_backup, coletar_estatisticas, pos_script, with_
     RefreshUtils.refresh_status("EM ANDAMENTO - INTERPRETANDO .JSON")
     l.read_config(config)
     l.build_config()
-    l.check_directories()
-    # if with_backup:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
-    #     l.run_backup()
-    # if send_backup or with_backup:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR QUE SERÁ ATUALIZADO")
-    #     l.send_backup()
-    # if not dont_clean:
-    #     # Então limpe
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
-    #     l.clean_schemas()
-    # RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
-    # l.run_import()
-    # RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
-    # l.recompile()
-    # if coletar_estatisticas:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
-    #     l.run_coleta_estatisticas()
-    # if pos_script is not None:
-    #     RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
-    #     l.run_pos_script(pos_script)
-    # RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
+    if with_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO BACKUP")
+        l.run_backup()
+    if send_backup or with_backup:
+        RefreshUtils.refresh_status("EM ANDAMENTO - ENVIANDO BACKUP PARA O SERVIDOR QUE SERÁ ATUALIZADO")
+        l.send_backup()
+    if not dont_clean:
+        # Então limpe
+        RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO OS DADOS DO BANCO DE TESTES")
+        l.clean_schemas()
+    RefreshUtils.refresh_status("EM ANDAMENTO - ATUALIZANDO OS USUARIOS")
+    l.run_import()
+    RefreshUtils.refresh_status("EM ANDAMENTO - RECOMPILANDO OS OBJETOS")
+    l.recompile()
+    if coletar_estatisticas:
+        RefreshUtils.refresh_status("EM ANDAMENTO - REALIZANDO COLETA DE ESTATISITCAS")
+        l.run_coleta_estatisticas()
+    if pos_script is not None:
+        RefreshUtils.refresh_status("EM ANDAMENTO - EXECUTANDO POS SCRIPT")
+        l.run_pos_script(pos_script)
+    RefreshUtils.refresh_status("EM ANDAMENTO - LIMPANDO DIRETÓRIOS TEMPORÁRIOS")
+    l.config.clean_if_need()
+    RefreshUtils.refresh_status("LB2 REFRESH FINALIZADO!")
 
 
 def build_stuff(config):

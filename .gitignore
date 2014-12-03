@@ -55,5 +55,7 @@ docs/_build/
 # PyBuilder
 target/
 
+#Nao pegar as atualizacoes do status
+status.txt
 # Berna Testes
 tests/
