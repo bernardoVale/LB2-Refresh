@@ -228,22 +228,36 @@ class LB2Refresh:
         # if not self.restart_database(retry_count):
         #     RefreshUtils.leave_with_message("Impossivel reiniciar o banco de dados apos "
         #                                     "" + str(retry_count) + " tentativa(s). Contacte o DBA.")
+
         for schema in self.config.schemas:
-            logging.info("Realizando limpeza do usuario " + schema)
+            drop_schema = schema
+            if self.config.remap_schema:
+                remap_list = self.config.remap_schema.split(',')
+                print remap_list
+                for remap in remap_list:
+                    aux = remap.split(':')
+                    original = aux[0]
+                    remaped = aux[1]
+                    if original.upper() == schema.upper():
+                        # Quero remover o schema remapeado
+                        drop_schema = remaped
+                        break
+            logging.info("Realizando limpeza do usuario " + drop_schema)
             sql = "set serveroutput on; \n" \
                   "declare \n" \
                   "r varchar2(4000); \n" \
                   "begin \n" \
-                  "r := lb2_refresh_clean('" + schema + "'); \n" \
+                  "r := lb2_refresh_clean('" + drop_schema + "'); \n" \
                                                         "dbms_output.put_line('Resultado:' || r); \n" \
                                                         "end; \n" \
                                                         "/"
+            print sql
             r = self.run_query(sql, True)
             logging.info(r)
             if x(r):
-                logging.info("Usuario " + schema + " removido com sucesso")
+               logging.info("Usuario " + drop_schema + " removido com sucesso")
             else:
-                RefreshUtils.leave_with_message("Impossivel remover o usuario " + schema + " finalizando...")
+               RefreshUtils.leave_with_message("Impossivel remover o usuario " + drop_schema + " finalizando...")
         logging.info("Todos os usuários foram removidos do banco!")
 
     def check_ora_variables(self):
